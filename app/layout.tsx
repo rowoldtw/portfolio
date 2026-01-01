@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     canonical: '/'
   },
   title: {
-    default: 'Nim - Personal website template',
+    default: 'Woodrow Rowoldt',
     template: '%s | Nim'
   },
   description:  'Nim is a free and open-source personal website template built with Next.js 15, React 19 and Motion-Primitives.',
@@ -49,7 +49,7 @@ export default function RootLayout({
           storageKey="theme"
           defaultTheme="system"
         >
-          <div className="flex min-h-screen w-full flex-col font-[family-name:var(--font-inter-tight)]">
+          <div className="flex min-h-screen w-full flex-col font-(family-name:--font-inter-tight)">
             <div className="relative mx-auto w-full max-w-screen-sm flex-1 px-4 pt-20">
               <Header />
               {children}
