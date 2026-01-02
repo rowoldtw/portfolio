@@ -120,6 +120,7 @@ function MorphingDialogTrigger({
       className={cn('relative cursor-pointer', className)}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
+      tabIndex={0}
       style={style}
       role="button"
       aria-haspopup="dialog"

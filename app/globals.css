@@ -159,3 +159,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .snap-stop-always {
+    scroll-snap-stop: always;
+  }
+
+  .scrollbar-gutter-stable {
+    scrollbar-gutter: stable both-edges;
+  }
+}
