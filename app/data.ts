@@ -76,6 +76,12 @@ export const WORK_EXPERIENCE: WorkExperience[] = [
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    title: 'January 1st 2026',
+    description: 'A personal reflection and reset heading into 2026.',
+    link: '/blog/january-1st-2026',
+    uid: 'blog-2',
+  },
+  {
     title: 'Exploring the Intersection of Design, AI, and Design Engineering',
     description: 'How AI is changing the way we design',
     link: '/blog/exploring-the-intersection-of-design-ai-and-design-engineering',
