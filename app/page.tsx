@@ -431,7 +431,7 @@ export default function Personal() {
                     duration: 0.35,
                   }}
                 >
-                  <MorphingDialogTrigger className="rounded-2xl border border-zinc-200/60 bg-white/60 p-4 backdrop-blur-md transition-colors hover:bg-white/70 dark:border-zinc-800/60 dark:bg-[#121214]/60 dark:hover:bg-[#121214]/70">
+                  <MorphingDialogTrigger className="rounded-2xl border border-zinc-200/60 bg-white/60 p-4 backdrop-blur-md transition-colors hover:bg-white/70 dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:hover:bg-[#121212]/70">
                     <div className="flex w-full items-center gap-4">
                       <MorphingDialogImage
                         src="/cover.jpg"
@@ -631,7 +631,7 @@ export default function Personal() {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <div className="pointer-events-auto mx-auto w-full max-w-screen-sm px-4">
           <Footer
-            className="mt-0 rounded-2xl border border-zinc-200/60 bg-white/60 px-4 py-3 shadow-lg shadow-zinc-900/10 backdrop-blur-md dark:border-zinc-800/60 dark:bg-[#121214]/60 dark:shadow-black/40"
+            className="mt-0 rounded-2xl border border-zinc-200/60 bg-white/60 px-4 py-3 shadow-lg shadow-zinc-900/10 backdrop-blur-md dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:shadow-black/40"
           />
         </div>
       </div>

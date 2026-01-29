@@ -1,4 +1,4 @@
-import createMDX from '@next/mdx';
+import createMDX from '@next/mdx'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -8,10 +8,13 @@ const nextConfig = {
     // @see https://nextjs.org/docs/app/api-reference/next-config-js/mdxRs
     mdxRs: true,
   },
-};
+  turbopack: {
+    root: process.cwd(),
+  },
+}
 
 const withMDX = createMDX({
   extension: /\.mdx?$/,
-});
+})
 
-export default withMDX(nextConfig);
+export default withMDX(nextConfig)

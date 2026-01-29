@@ -43,7 +43,7 @@ export function AnimatedThemeToggler({
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       initial={false}
       className={cn(
-        'relative inline-flex h-8 w-14 items-center rounded-full border border-zinc-200/60 bg-white/60 backdrop-blur-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60 dark:border-zinc-800/60 dark:bg-[#121214]/60 dark:focus-visible:ring-zinc-500/60',
+        'relative inline-flex h-8 w-14 items-center rounded-full border border-zinc-200/60 bg-white/60 backdrop-blur-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60 dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:focus-visible:ring-zinc-500/60',
         className,
       )}
     >
