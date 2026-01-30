@@ -36,6 +36,7 @@ export function Magnetic({
 
   useEffect(() => {
     const calculateDistance = (e: MouseEvent) => {
+      if (!isHovered) return
       if (ref.current) {
         const rect = ref.current.getBoundingClientRect()
         const centerX = rect.left + rect.width / 2
