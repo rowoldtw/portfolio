@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from 'next-themes'
-import { Analytics } from "@vercel/analytics/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { isWipModeEnabled } from '@/lib/wip-mode'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -11,16 +12,34 @@ export const viewport: Viewport = {
   themeColor: '#ffffff',
 }
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://woodrowrowoldt.com/'),
-  alternates: {
-    canonical: '/'
-  },
-  title: {
-    default: 'Woodrow Rowoldt',
-    template: '%s | Woodrow Rowoldt'
-  },
-};
+export function generateMetadata(): Metadata {
+  const wipModeEnabled = isWipModeEnabled()
+
+  return {
+    metadataBase: new URL('https://woodrowrowoldt.com/'),
+    alternates: {
+      canonical: '/',
+    },
+    title: wipModeEnabled
+      ? {
+          default: 'Portfolio Refresh In Progress',
+          template: '%s | Woodrow Rowoldt',
+        }
+      : {
+          default: 'Woodrow Rowoldt',
+          template: '%s | Woodrow Rowoldt',
+        },
+    description: wipModeEnabled
+      ? 'The portfolio is temporarily offline while a new version is being prepared.'
+      : 'Portfolio website for Woodrow Rowoldt.',
+    robots: wipModeEnabled
+      ? {
+          index: false,
+          follow: false,
+        }
+      : undefined,
+  }
+}
 
 const geist = Geist({
   variable: '--font-geist',
@@ -52,6 +71,8 @@ export default function RootLayout({
             {children}
           </div>
         </ThemeProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
