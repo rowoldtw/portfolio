@@ -9,17 +9,9 @@ import { cn } from '@/lib/utils'
 
 type AnimatedThemeTogglerProps = {
   className?: string
-  /**
-   * Duration of the theme transition animation in milliseconds.
-   * Defaults to 400ms.
-   */
   duration?: number
 }
 
-/**
- * Magic UI-inspired animated theme toggler.
- * Docs: https://magicui.design/docs/components/animated-theme-toggler
- */
 export function AnimatedThemeToggler({
   className,
   duration = 400,
@@ -28,7 +20,8 @@ export function AnimatedThemeToggler({
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
-    setMounted(true)
+    const frame = window.requestAnimationFrame(() => setMounted(true))
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   if (!mounted) return null
@@ -43,14 +36,14 @@ export function AnimatedThemeToggler({
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       initial={false}
       className={cn(
-        'relative inline-flex h-8 w-14 items-center rounded-full border border-zinc-200/60 bg-white/60 backdrop-blur-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60 dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:focus-visible:ring-zinc-500/60',
+        'relative inline-flex h-8 w-14 items-center rounded-full border border-zinc-200/60 bg-white/60 backdrop-blur-md transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:focus-visible:ring-zinc-500/60',
         className,
       )}
     >
       <span className="sr-only">Toggle theme</span>
 
       <motion.span
-        className="pointer-events-none absolute left-[3px] top-[3px] flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-zinc-200/60 dark:bg-zinc-950 dark:ring-zinc-800/60"
+        className="pointer-events-none absolute top-[3px] left-[3px] flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-zinc-200/60 dark:bg-zinc-950 dark:ring-zinc-800/60"
         animate={{ x: isDark ? 24 : 0 }}
         transition={{ type: 'spring', bounce: 0, duration: seconds }}
       >
@@ -83,4 +76,3 @@ export function AnimatedThemeToggler({
     </motion.button>
   )
 }
-

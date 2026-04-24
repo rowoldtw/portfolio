@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { XIcon } from 'lucide-react'
 import { Magnetic } from '@/components/ui/magnetic'
@@ -28,8 +28,8 @@ import { Header } from './header'
 import { Footer } from './footer'
 
 const VARIANTS_SECTION = {
-  hidden: { opacity: 0, y: 20, filter: 'blur(8px)' },
-  visible: { opacity: 1, y: 0, filter: 'blur(0px)' },
+  hidden: { opacity: 0, filter: 'blur(8px)' },
+  visible: { opacity: 1, filter: 'blur(0px)' },
 }
 
 const TRANSITION_SECTION = {
@@ -49,6 +49,12 @@ const HOME_SECTIONS = [
 type HomeSectionId = (typeof HOME_SECTIONS)[number]['id']
 
 const HOME_LAST_SECTION_STORAGE_KEY = 'portfolio:home:last-section-id'
+
+function getScrollTopForSection(root: HTMLElement, sectionEl: HTMLElement) {
+  const rootRect = root.getBoundingClientRect()
+  const sectionRect = sectionEl.getBoundingClientRect()
+  return sectionRect.top - rootRect.top + root.scrollTop
+}
 
 type ProjectVideoProps = {
   src: string
@@ -137,18 +143,70 @@ function MagneticSocialLink({
 export default function Personal() {
   const scrollContainerRef = useRef<HTMLElement | null>(null)
   const [activeSectionId, setActiveSectionId] = useState<HomeSectionId>(
-    HOME_SECTIONS[0].id
+    HOME_SECTIONS[0].id,
   )
   const intersectionRatiosRef = useRef<Record<string, number>>({})
   const isFirstSectionPersistRef = useRef(true)
   const pendingProgrammaticScrollCleanupRef = useRef<(() => void) | null>(null)
+
+  const scrollRootToSectionEl = useCallback(
+    (root: HTMLElement, sectionEl: HTMLElement, behavior: ScrollBehavior) => {
+      pendingProgrammaticScrollCleanupRef.current?.()
+      pendingProgrammaticScrollCleanupRef.current = null
+
+      const targetTop = getScrollTopForSection(root, sectionEl)
+      const prevSnapType = root.style.scrollSnapType
+      const prevScrollBehavior = root.style.scrollBehavior
+
+      root.style.scrollSnapType = 'none'
+
+      let finished = false
+      let scrollEndTimeoutId: number | null = null
+      let maxWaitTimeoutId: number | null = null
+
+      const cleanup = () => {
+        if (finished) return
+        finished = true
+
+        root.removeEventListener('scroll', onScroll)
+        if (scrollEndTimeoutId !== null) window.clearTimeout(scrollEndTimeoutId)
+        if (maxWaitTimeoutId !== null) window.clearTimeout(maxWaitTimeoutId)
+
+        root.style.scrollSnapType = prevSnapType
+        root.style.scrollBehavior = prevScrollBehavior
+      }
+
+      const finalize = () => {
+        if (finished) return
+
+        root.style.scrollBehavior = 'auto'
+        root.scrollTo({ top: targetTop, behavior: 'auto' })
+
+        cleanup()
+      }
+
+      const onScroll = () => {
+        if (scrollEndTimeoutId !== null) window.clearTimeout(scrollEndTimeoutId)
+        scrollEndTimeoutId = window.setTimeout(finalize, 120)
+      }
+
+      pendingProgrammaticScrollCleanupRef.current = cleanup
+
+      root.addEventListener('scroll', onScroll, { passive: true })
+      root.scrollTo({ top: targetTop, behavior })
+
+      onScroll()
+      maxWaitTimeoutId = window.setTimeout(finalize, 1500)
+    },
+    [],
+  )
 
   useEffect(() => {
     const root = scrollContainerRef.current
     if (!root) return
 
     const sectionEls = HOME_SECTIONS.map((section) =>
-      root.querySelector<HTMLElement>(`[data-section="${section.id}"]`)
+      root.querySelector<HTMLElement>(`[data-section="${section.id}"]`),
     ).filter(Boolean) as HTMLElement[]
 
     if (sectionEls.length === 0) return
@@ -156,8 +214,9 @@ export default function Personal() {
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const id = (entry.target as HTMLElement).dataset
-            .section as HomeSectionId | undefined
+          const id = (entry.target as HTMLElement).dataset.section as
+            | HomeSectionId
+            | undefined
           if (!id) continue
           intersectionRatiosRef.current[id] = entry.intersectionRatio
         }
@@ -178,7 +237,7 @@ export default function Personal() {
       {
         root,
         threshold: [0, 0.25, 0.5, 0.75, 1],
-      }
+      },
     )
 
     for (const el of sectionEls) observer.observe(el)
@@ -202,7 +261,7 @@ export default function Personal() {
 
     try {
       storedId = toKnownSectionId(
-        sessionStorage.getItem(HOME_LAST_SECTION_STORAGE_KEY)
+        sessionStorage.getItem(HOME_LAST_SECTION_STORAGE_KEY),
       )
     } catch {
       storedId = null
@@ -212,21 +271,18 @@ export default function Personal() {
     if (!idToRestore) return
 
     const el = root.querySelector<HTMLElement>(
-      `[data-section="${idToRestore}"]`
+      `[data-section="${idToRestore}"]`,
     )
     if (!el) return
 
-    // Ensure layout is ready before measuring/scrolling.
     requestAnimationFrame(() => {
       scrollRootToSectionEl(root, el, 'auto')
     })
-  }, [])
+  }, [scrollRootToSectionEl])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Avoid clobbering a previously stored section with the initial default ('home')
-    // before we get a chance to restore.
     if (isFirstSectionPersistRef.current) {
       isFirstSectionPersistRef.current = false
       return
@@ -234,9 +290,7 @@ export default function Personal() {
 
     try {
       sessionStorage.setItem(HOME_LAST_SECTION_STORAGE_KEY, activeSectionId)
-    } catch {
-      // ignore storage errors (e.g., private mode / quota)
-    }
+    } catch {}
   }, [activeSectionId])
 
   useEffect(() => {
@@ -245,72 +299,6 @@ export default function Personal() {
       pendingProgrammaticScrollCleanupRef.current = null
     }
   }, [])
-
-  function getScrollTopForSection(root: HTMLElement, sectionEl: HTMLElement) {
-    const rootRect = root.getBoundingClientRect()
-    const sectionRect = sectionEl.getBoundingClientRect()
-    return sectionRect.top - rootRect.top + root.scrollTop
-  }
-
-  function scrollRootToSectionEl(
-    root: HTMLElement,
-    sectionEl: HTMLElement,
-    behavior: ScrollBehavior
-  ) {
-    // If a programmatic scroll is already in-flight, cancel/cleanup first to avoid
-    // competing timers/listeners that can cause "overscroll" in snap containers.
-    pendingProgrammaticScrollCleanupRef.current?.()
-    pendingProgrammaticScrollCleanupRef.current = null
-
-    const targetTop = getScrollTopForSection(root, sectionEl)
-    const prevSnapType = root.style.scrollSnapType
-    const prevScrollBehavior = root.style.scrollBehavior
-
-    // Prevent scroll-snap from influencing the programmatic scroll and snapping
-    // past the intended section (this can happen intermittently across browsers).
-    root.style.scrollSnapType = 'none'
-
-    let finished = false
-    let scrollEndTimeoutId: number | null = null
-    let maxWaitTimeoutId: number | null = null
-
-    const cleanup = () => {
-      if (finished) return
-      finished = true
-
-      root.removeEventListener('scroll', onScroll)
-      if (scrollEndTimeoutId !== null) window.clearTimeout(scrollEndTimeoutId)
-      if (maxWaitTimeoutId !== null) window.clearTimeout(maxWaitTimeoutId)
-
-      root.style.scrollSnapType = prevSnapType
-      root.style.scrollBehavior = prevScrollBehavior
-    }
-
-    const finalize = () => {
-      if (finished) return
-
-      // While snap is still disabled, hard-align to the exact section top.
-      root.style.scrollBehavior = 'auto'
-      root.scrollTo({ top: targetTop, behavior: 'auto' })
-
-      cleanup()
-    }
-
-    const onScroll = () => {
-      if (scrollEndTimeoutId !== null) window.clearTimeout(scrollEndTimeoutId)
-      scrollEndTimeoutId = window.setTimeout(finalize, 120)
-    }
-
-    pendingProgrammaticScrollCleanupRef.current = cleanup
-
-    root.addEventListener('scroll', onScroll, { passive: true })
-    root.scrollTo({ top: targetTop, behavior })
-
-    // Trigger the "scroll end" timer even if the browser doesn't emit scroll events
-    // (e.g., instant scroll, or no-op because we're already aligned).
-    onScroll()
-    maxWaitTimeoutId = window.setTimeout(finalize, 1500)
-  }
 
   function scrollToSection(id: HomeSectionId) {
     const root = scrollContainerRef.current
@@ -332,7 +320,7 @@ export default function Personal() {
     <>
       <motion.main
         ref={scrollContainerRef}
-        className="relative h-dvh w-full overflow-y-auto snap-y snap-mandatory overscroll-y-contain"
+        className="relative h-dvh w-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain"
       >
         <SectionNav
           sections={[...HOME_SECTIONS]}
@@ -353,14 +341,15 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="h-dvh snap-start snap-stop-always overflow-y-auto scrollbar-gutter-stable"
+          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
         >
-          <div className="mx-auto flex min-h-full w-full max-w-screen-sm flex-col justify-center box-border px-4 py-20">
+          <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <Header />
 
             <p className="text-zinc-600 dark:text-zinc-400">
               <span className="block">
-                Focused on creating intuitive and performant neural architecture.
+                Focused on creating intuitive and performant neural
+                architecture.
               </span>
               <span className="block">
                 Bridging the gap between biology and technology.
@@ -378,9 +367,9 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="h-dvh snap-start snap-stop-always overflow-y-auto scrollbar-gutter-stable"
+          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
         >
-          <div className="mx-auto flex min-h-full w-full max-w-screen-sm flex-col justify-center box-border px-4 py-20">
+          <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-5 text-lg font-medium">Projects</h3>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               {PROJECTS.map((project) => (
@@ -396,7 +385,7 @@ export default function Personal() {
                       rel="noopener noreferrer"
                     >
                       {project.name}
-                      <span className="absolute bottom-0.5 left-0 block h-px w-full max-w-0 bg-zinc-900 dark:bg-zinc-50 transition-all duration-200 group-hover:max-w-full"></span>
+                      <span className="absolute bottom-0.5 left-0 block h-px w-full max-w-0 bg-zinc-900 transition-all duration-200 group-hover:max-w-full dark:bg-zinc-50"></span>
                     </a>
                     <p className="text-base text-zinc-600 dark:text-zinc-400">
                       {project.description}
@@ -417,9 +406,9 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="h-dvh snap-start snap-stop-always overflow-y-auto scrollbar-gutter-stable"
+          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
         >
-          <div className="mx-auto flex min-h-full w-full max-w-screen-sm flex-col justify-center box-border px-4 py-20">
+          <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-5 text-lg font-medium">Experience</h3>
             <div className="flex flex-col space-y-3">
               {WORK_EXPERIENCE.map((job) => (
@@ -497,8 +486,9 @@ export default function Personal() {
                           }}
                         >
                           <p>
-                            Placeholder details for this role. Add real highlights,
-                            impact metrics, and technologies when you’re ready.
+                            Placeholder details for this role. Add real
+                            highlights, impact metrics, and technologies when
+                            you’re ready.
                           </p>
                         </MorphingDialogDescription>
 
@@ -559,9 +549,9 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="h-dvh snap-start snap-stop-always overflow-y-auto scrollbar-gutter-stable"
+          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
         >
-          <div className="mx-auto flex min-h-full w-full max-w-screen-sm flex-col justify-center box-border px-4 py-20">
+          <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-3 text-lg font-medium">Blog</h3>
             <div className="flex flex-col space-y-0">
               <AnimatedBackground
@@ -604,9 +594,9 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="h-dvh snap-start snap-stop-always overflow-y-auto scrollbar-gutter-stable"
+          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
         >
-          <div className="mx-auto flex min-h-full w-full max-w-screen-sm flex-col justify-center box-border px-4 py-20">
+          <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-5 text-lg font-medium">Connect</h3>
             <p className="mb-5 text-zinc-600 dark:text-zinc-400">
               Feel free to contact me at{' '}
@@ -630,9 +620,7 @@ export default function Personal() {
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <div className="pointer-events-auto mx-auto w-full max-w-screen-sm px-4">
-          <Footer
-            className="mt-0 rounded-2xl border border-zinc-200/60 bg-white/60 px-4 py-3 shadow-lg shadow-zinc-900/10 backdrop-blur-md dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:shadow-black/40"
-          />
+          <Footer className="mt-0 rounded-2xl border border-zinc-200/60 bg-white/60 px-4 py-3 shadow-lg shadow-zinc-900/10 backdrop-blur-md dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:shadow-black/40" />
         </div>
       </div>
     </>

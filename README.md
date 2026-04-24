@@ -1,15 +1,41 @@
 # Portfolio
 
-This is my portfolio website to showcase work I've done.
+Personal portfolio built with Next.js, MDX, Tailwind CSS, Motion, and Vercel.
 
-## Work In Progress Mode
+## Development
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Start the local dev server:
+
+```bash
+pnpm dev
+```
+
+Build for production:
+
+```bash
+pnpm build
+```
+
+## Work-In-Progress Mode
 
 Set `NEXT_PUBLIC_PORTFOLIO_WIP_MODE=true` to deploy the temporary placeholder instead of the main site.
 
-When the flag is enabled:
+When enabled:
 
 - `/` renders the maintenance page.
 - Other app routes redirect back to `/`.
 - Metadata and `robots.txt` switch to `noindex`.
 
 Unset the variable or set it to `false` to restore the full portfolio.
+
+## Project Notes
+
+- Homepage sections use CSS scroll snap with a custom section navigator.
+- Blog posts live in `app/blog/**/page.mdx`.
+- Shared profile, project, post, and social data lives in `app/data.ts`.

@@ -232,8 +232,8 @@ function MorphingDialogContainer({ children }: MorphingDialogContainerProps) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    return () => setMounted(false)
+    const frame = window.requestAnimationFrame(() => setMounted(true))
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   if (!mounted) return null
