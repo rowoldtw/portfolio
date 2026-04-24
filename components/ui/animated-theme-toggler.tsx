@@ -18,15 +18,20 @@ export function AnimatedThemeToggler({
 }: AnimatedThemeTogglerProps) {
   const { setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
+  const [canAnimate, setCanAnimate] = React.useState(false)
 
   React.useEffect(() => {
     const frame = window.requestAnimationFrame(() => setMounted(true))
     return () => window.cancelAnimationFrame(frame)
   }, [])
 
-  if (!mounted) return null
+  React.useEffect(() => {
+    if (!mounted) return
+    const frame = window.requestAnimationFrame(() => setCanAnimate(true))
+    return () => window.cancelAnimationFrame(frame)
+  }, [mounted])
 
-  const isDark = resolvedTheme === 'dark'
+  const isDark = mounted && resolvedTheme === 'dark'
   const seconds = duration / 1000
 
   return (
@@ -43,18 +48,30 @@ export function AnimatedThemeToggler({
       <span className="sr-only">Toggle theme</span>
 
       <motion.span
-        className="pointer-events-none absolute top-[3px] left-[3px] flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-zinc-200/60 dark:bg-zinc-950 dark:ring-zinc-800/60"
+        className={cn(
+          'pointer-events-none absolute top-[3px] left-[3px] flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-zinc-200/60 dark:bg-zinc-950 dark:ring-zinc-800/60',
+          !mounted && 'opacity-0',
+        )}
         animate={{ x: isDark ? 24 : 0 }}
-        transition={{ type: 'spring', bounce: 0, duration: seconds }}
+        transition={
+          canAnimate
+            ? { type: 'spring', bounce: 0, duration: seconds }
+            : { duration: 0 }
+        }
       >
         <AnimatePresence mode="wait" initial={false}>
           {isDark ? (
             <motion.span
               key="moon"
-              initial={{ opacity: 0, rotate: -90, scale: 0.65 }}
+              initial={
+                canAnimate ? { opacity: 0, rotate: -90, scale: 0.65 } : false
+              }
               animate={{ opacity: 1, rotate: 0, scale: 1 }}
               exit={{ opacity: 0, rotate: 90, scale: 0.65 }}
-              transition={{ duration: seconds, ease: 'easeInOut' }}
+              transition={{
+                duration: canAnimate ? seconds : 0,
+                ease: 'easeInOut',
+              }}
               className="text-zinc-200"
             >
               <MoonIcon className="h-3.5 w-3.5" />
@@ -62,10 +79,15 @@ export function AnimatedThemeToggler({
           ) : (
             <motion.span
               key="sun"
-              initial={{ opacity: 0, rotate: 90, scale: 0.65 }}
+              initial={
+                canAnimate ? { opacity: 0, rotate: 90, scale: 0.65 } : false
+              }
               animate={{ opacity: 1, rotate: 0, scale: 1 }}
               exit={{ opacity: 0, rotate: -90, scale: 0.65 }}
-              transition={{ duration: seconds, ease: 'easeInOut' }}
+              transition={{
+                duration: canAnimate ? seconds : 0,
+                ease: 'easeInOut',
+              }}
               className="text-zinc-700"
             >
               <SunIcon className="h-3.5 w-3.5" />
