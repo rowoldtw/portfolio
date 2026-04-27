@@ -28,6 +28,7 @@ export function Footer({
           <TextLoop className="text-xs text-zinc-500">
             <span>© 2026 Woodrow Rowoldt</span>
             <span>ss03</span>
+            <span>Last update: 04/27/26</span>
           </TextLoop>
         </a>
 
