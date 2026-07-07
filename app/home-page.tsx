@@ -1,9 +1,18 @@
 'use client'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
-import { XIcon } from 'lucide-react'
+import {
+  BriefcaseBusiness,
+  FolderKanban,
+  HomeIcon,
+  Mail,
+  NotebookText,
+  XIcon,
+} from 'lucide-react'
 import { Magnetic } from '@/components/ui/magnetic'
 import { SectionNav } from '@/components/section-nav'
+import { useHomeSection } from '@/components/home-section-provider'
+import { cn } from '@/lib/utils'
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -25,7 +34,6 @@ import {
   SOCIAL_LINKS,
 } from './data'
 import { Header } from './header'
-import { Footer } from './footer'
 
 const VARIANTS_SECTION = {
   hidden: { opacity: 0, filter: 'blur(8px)' },
@@ -39,16 +47,22 @@ const TRANSITION_SECTION = {
 const VIEWPORT_SECTION = { amount: 0.6, once: true } as const
 
 const HOME_SECTIONS = [
-  { id: 'home', label: 'Home' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'experience', label: 'Experience' },
-  { id: 'blog', label: 'Blog' },
-  { id: 'connect', label: 'Connect' },
+  { id: 'home', label: 'Home', icon: HomeIcon },
+  { id: 'projects', label: 'Projects', icon: FolderKanban },
+  { id: 'experience', label: 'Experience', icon: BriefcaseBusiness },
+  { id: 'blog', label: 'Blog', icon: NotebookText },
+  { id: 'connect', label: 'Connect', icon: Mail },
 ] as const
 
 type HomeSectionId = (typeof HOME_SECTIONS)[number]['id']
 
 const HOME_LAST_SECTION_STORAGE_KEY = 'portfolio:home:last-section-id'
+
+function toKnownSectionId(value: string | null): HomeSectionId | null {
+  if (!value) return null
+  const id = value.replace('#', '') as HomeSectionId
+  return HOME_SECTIONS.some((section) => section.id === id) ? id : null
+}
 
 function getScrollTopForSection(root: HTMLElement, sectionEl: HTMLElement) {
   const rootRect = root.getBoundingClientRect()
@@ -56,11 +70,12 @@ function getScrollTopForSection(root: HTMLElement, sectionEl: HTMLElement) {
   return sectionRect.top - rootRect.top + root.scrollTop
 }
 
-type ProjectVideoProps = {
+type ProjectMediaProps = {
   src: string
+  alt: string
 }
 
-function ProjectVideo({ src }: ProjectVideoProps) {
+function ProjectMedia({ src, alt }: ProjectMediaProps) {
   return (
     <MorphingDialog
       transition={{
@@ -70,22 +85,18 @@ function ProjectVideo({ src }: ProjectVideoProps) {
       }}
     >
       <MorphingDialogTrigger>
-        <video
+        <MorphingDialogImage
           src={src}
-          autoPlay
-          loop
-          muted
-          className="aspect-video w-full cursor-zoom-in rounded-xl"
+          alt={alt}
+          className="aspect-video w-full cursor-zoom-in rounded-xl object-cover"
         />
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent className="relative aspect-video rounded-2xl bg-zinc-50 p-1 ring-1 ring-zinc-200/50 ring-inset dark:bg-zinc-950 dark:ring-zinc-800/50">
-          <video
+          <MorphingDialogImage
             src={src}
-            autoPlay
-            loop
-            muted
-            className="aspect-video h-[50vh] w-full rounded-xl md:h-[70vh]"
+            alt={alt}
+            className="aspect-video h-[50vh] w-full rounded-xl object-cover md:h-[70vh]"
           />
         </MorphingDialogContent>
         <MorphingDialogClose
@@ -142,12 +153,16 @@ function MagneticSocialLink({
 
 export default function Personal() {
   const scrollContainerRef = useRef<HTMLElement | null>(null)
-  const [activeSectionId, setActiveSectionId] = useState<HomeSectionId>(
-    HOME_SECTIONS[0].id,
-  )
+  const {
+    activeHomeSectionId,
+    isHomeSectionReady,
+    setActiveHomeSectionId,
+  } = useHomeSection()
+  const activeSectionId = toKnownSectionId(activeHomeSectionId) ?? HOME_SECTIONS[0].id
   const intersectionRatiosRef = useRef<Record<string, number>>({})
   const isFirstSectionPersistRef = useRef(true)
   const pendingProgrammaticScrollCleanupRef = useRef<(() => void) | null>(null)
+  const isRestoringSectionRef = useRef(false)
 
   const scrollRootToSectionEl = useCallback(
     (root: HTMLElement, sectionEl: HTMLElement, behavior: ScrollBehavior) => {
@@ -187,7 +202,7 @@ export default function Personal() {
 
       const onScroll = () => {
         if (scrollEndTimeoutId !== null) window.clearTimeout(scrollEndTimeoutId)
-        scrollEndTimeoutId = window.setTimeout(finalize, 120)
+        scrollEndTimeoutId = window.setTimeout(finalize, 180)
       }
 
       pendingProgrammaticScrollCleanupRef.current = cleanup
@@ -211,10 +226,12 @@ export default function Personal() {
 
     if (sectionEls.length === 0) return
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const id = (entry.target as HTMLElement).dataset.section as
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (isRestoringSectionRef.current) return
+
+          for (const entry of entries) {
+            const id = (entry.target as HTMLElement).dataset.section as
             | HomeSectionId
             | undefined
           if (!id) continue
@@ -232,7 +249,7 @@ export default function Personal() {
           }
         }
 
-        setActiveSectionId(bestId)
+        setActiveHomeSectionId(bestId)
       },
       {
         root,
@@ -243,18 +260,12 @@ export default function Personal() {
     for (const el of sectionEls) observer.observe(el)
 
     return () => observer.disconnect()
-  }, [])
+  }, [setActiveHomeSectionId])
 
   useEffect(() => {
     const root = scrollContainerRef.current
     if (!root) return
     if (typeof window === 'undefined') return
-
-    const toKnownSectionId = (value: string | null): HomeSectionId | null => {
-      if (!value) return null
-      const id = value.replace('#', '') as HomeSectionId
-      return HOME_SECTIONS.some((s) => s.id === id) ? id : null
-    }
 
     const hashId = toKnownSectionId(window.location.hash)
     let storedId: HomeSectionId | null = null
@@ -275,18 +286,29 @@ export default function Personal() {
     )
     if (!el) return
 
+    isRestoringSectionRef.current = true
     requestAnimationFrame(() => {
+      setActiveHomeSectionId(idToRestore)
       scrollRootToSectionEl(root, el, 'auto')
+      requestAnimationFrame(() => {
+        isRestoringSectionRef.current = false
+        setActiveHomeSectionId(idToRestore)
+      })
     })
-  }, [scrollRootToSectionEl])
+  }, [scrollRootToSectionEl, setActiveHomeSectionId])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    if (isFirstSectionPersistRef.current) {
+    if (
+      isFirstSectionPersistRef.current &&
+      activeSectionId === HOME_SECTIONS[0].id
+    ) {
       isFirstSectionPersistRef.current = false
       return
     }
+
+    isFirstSectionPersistRef.current = false
 
     try {
       sessionStorage.setItem(HOME_LAST_SECTION_STORAGE_KEY, activeSectionId)
@@ -320,11 +342,15 @@ export default function Personal() {
     <>
       <motion.main
         ref={scrollContainerRef}
-        className="relative h-dvh w-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain"
+        className="scrollbar-hidden relative h-dvh w-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain bg-background dark:bg-[#111]"
       >
         <SectionNav
           sections={[...HOME_SECTIONS]}
           activeId={activeSectionId}
+          className={cn(
+            'transition-opacity duration-150',
+            !isHomeSectionReady && 'pointer-events-none opacity-0',
+          )}
           onSelect={(id) => {
             const isKnown = HOME_SECTIONS.some((s) => s.id === id)
             if (!isKnown) return
@@ -341,7 +367,7 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
+          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <Header />
@@ -367,7 +393,7 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
+          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-5 text-lg font-medium">Projects</h3>
@@ -375,7 +401,10 @@ export default function Personal() {
               {PROJECTS.map((project) => (
                 <div key={project.name} className="space-y-2">
                   <div className="relative rounded-2xl bg-zinc-50/40 p-1 ring-1 ring-zinc-200/50 ring-inset dark:bg-zinc-950/40 dark:ring-zinc-800/50">
-                    <ProjectVideo src={project.video} />
+                    <ProjectMedia
+                      src={project.image}
+                      alt={`${project.name} project preview`}
+                    />
                   </div>
                   <div className="px-1">
                     <a
@@ -406,7 +435,7 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
+          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-5 text-lg font-medium">Experience</h3>
@@ -420,7 +449,7 @@ export default function Personal() {
                     duration: 0.35,
                   }}
                 >
-                  <MorphingDialogTrigger className="rounded-2xl border border-zinc-200/60 bg-white/60 p-4 backdrop-blur-md transition-colors hover:bg-white/70 dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:hover:bg-[#121212]/70">
+                  <MorphingDialogTrigger className="rounded-2xl border border-zinc-200/60 bg-white/60 p-4 backdrop-blur-md transition-colors hover:bg-white/70 dark:border-zinc-800/60 dark:bg-[#111]/60 dark:hover:bg-[#111]/70">
                     <div className="flex w-full items-center gap-4">
                       <MorphingDialogImage
                         src="/cover.jpg"
@@ -549,7 +578,7 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
+          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-3 text-lg font-medium">Blog</h3>
@@ -594,7 +623,7 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-gutter-stable h-dvh snap-start overflow-y-auto"
+          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-5 text-lg font-medium">Connect</h3>
@@ -618,11 +647,6 @@ export default function Personal() {
         </motion.section>
       </motion.main>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-        <div className="pointer-events-auto mx-auto w-full max-w-screen-sm px-4">
-          <Footer className="mt-0 rounded-2xl border border-zinc-200/60 bg-white/60 px-4 py-3 shadow-lg shadow-zinc-900/10 backdrop-blur-md dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:shadow-black/40" />
-        </div>
-      </div>
     </>
   )
 }

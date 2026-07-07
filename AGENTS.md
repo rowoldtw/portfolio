@@ -16,5 +16,4 @@
 
 ## Notes
 
-- `NEXT_PUBLIC_PORTFOLIO_WIP_MODE=true` enables the temporary maintenance page.
 - Root homepage sections are scroll-snapped; avoid transforms on the snapping section elements themselves.

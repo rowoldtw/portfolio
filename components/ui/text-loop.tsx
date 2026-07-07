@@ -18,6 +18,7 @@ export type TextLoopProps = {
   onIndexChange?: (index: number) => void
   trigger?: boolean
   mode?: AnimatePresenceProps['mode']
+  pauseOnHover?: boolean
 }
 
 export function TextLoop({
@@ -29,12 +30,15 @@ export function TextLoop({
   onIndexChange,
   trigger = true,
   mode = 'popLayout',
+  pauseOnHover = false,
 }: TextLoopProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
   const items = Children.toArray(children)
 
   useEffect(() => {
     if (!trigger) return
+    if (isPaused) return
 
     const intervalMs = interval * 1000
     const timer = setInterval(() => {
@@ -45,7 +49,7 @@ export function TextLoop({
       })
     }, intervalMs)
     return () => clearInterval(timer)
-  }, [items.length, interval, onIndexChange, trigger])
+  }, [items.length, interval, isPaused, onIndexChange, trigger])
 
   const motionVariants: Variants = {
     initial: { y: 20, opacity: 0 },
@@ -54,7 +58,15 @@ export function TextLoop({
   }
 
   return (
-    <div className={cn('relative inline-block whitespace-nowrap', className)}>
+    <div
+      className={cn('relative inline-block whitespace-nowrap', className)}
+      onMouseEnter={() => {
+        if (pauseOnHover) setIsPaused(true)
+      }}
+      onMouseLeave={() => {
+        if (pauseOnHover) setIsPaused(false)
+      }}
+    >
       <AnimatePresence mode={mode} initial={false}>
         <motion.div
           key={currentIndex}

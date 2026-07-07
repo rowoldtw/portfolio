@@ -22,6 +22,7 @@ export type AnimatedBackgroundProps = {
     | ReactElement<AnimatedBackgroundChildProps>[]
     | ReactElement<AnimatedBackgroundChildProps>
   defaultValue?: string
+  value?: string | null
   onValueChange?: (newActiveId: string | null) => void
   className?: string
   transition?: Transition
@@ -31,6 +32,7 @@ export type AnimatedBackgroundProps = {
 export function AnimatedBackground({
   children,
   defaultValue,
+  value,
   onValueChange,
   className,
   transition,
@@ -38,9 +40,12 @@ export function AnimatedBackground({
 }: AnimatedBackgroundProps) {
   const [activeId, setActiveId] = useState<string | null>(defaultValue ?? null)
   const uniqueId = useId()
+  const currentActiveId = value === undefined ? activeId : value
 
   const handleSetActiveId = (id: string | null) => {
-    setActiveId(id)
+    if (value === undefined) {
+      setActiveId(id)
+    }
 
     if (onValueChange) {
       onValueChange(id)
@@ -66,12 +71,12 @@ export function AnimatedBackground({
       {
         key: index,
         className: cn('relative inline-flex', child.props.className),
-        'data-checked': activeId === id ? 'true' : 'false',
+        'data-checked': currentActiveId === id ? 'true' : 'false',
         ...interactionProps,
       },
       <>
         <AnimatePresence initial={false}>
-          {activeId === id && (
+          {currentActiveId === id && (
             <motion.div
               layoutId={`background-${uniqueId}`}
               className={cn('absolute inset-0', className)}

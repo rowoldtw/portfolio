@@ -22,18 +22,6 @@ Build for production:
 pnpm build
 ```
 
-## Work-In-Progress Mode
-
-Set `NEXT_PUBLIC_PORTFOLIO_WIP_MODE=true` to deploy the temporary placeholder instead of the main site.
-
-When enabled:
-
-- `/` renders the maintenance page.
-- Other app routes redirect back to `/`.
-- Metadata and `robots.txt` switch to `noindex`.
-
-Unset the variable or set it to `false` to restore the full portfolio.
-
 ## Project Notes
 
 - Homepage sections use CSS scroll snap with a custom section navigator.

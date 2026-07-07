@@ -98,7 +98,7 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: #111;
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -132,6 +132,15 @@
 }
 
 @layer base {
+  html {
+    background: var(--background);
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
@@ -147,5 +156,47 @@
 
   .scrollbar-gutter-stable {
     scrollbar-gutter: stable both-edges;
+  }
+
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  .theme-selector-pill {
+    transform: translateX(0);
+    transition-duration: 0.26s;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  html:not([data-theme-ready='true']) .theme-selector-pill {
+    transition-duration: 0s !important;
+  }
+
+  html[data-theme-choice='light'] .theme-selector-pill {
+    transform: translateX(1.75rem);
+  }
+
+  html[data-theme-choice='dark'] .theme-selector-pill {
+    transform: translateX(3.5rem);
+  }
+
+  html[data-theme-choice='light'] .theme-option-light,
+  html[data-theme-choice='dark'] .theme-option-dark {
+    color: rgb(9 9 11);
+  }
+
+  html.dark[data-theme-choice='light'] .theme-option-light,
+  html.dark[data-theme-choice='dark'] .theme-option-dark,
+  html.dark[data-theme-choice='system'] .theme-option-system {
+    color: rgb(250 250 250);
+  }
+
+  html[data-theme-choice='system'] .theme-option-system {
+    color: rgb(9 9 11);
   }
 }
