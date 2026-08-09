@@ -1,8 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { MonitorIcon, MoonIcon, SunIcon } from 'lucide-react'
-import { Theme, useTheme } from '@/components/theme-provider'
+import { motion } from 'motion/react'
+import { useTheme } from '@/components/theme-provider'
+import { useUiPreferences } from '@/components/ui-preferences-provider'
+import { createAnimation } from '@/components/ui/skiper-ui/skiper26'
 
 import { cn } from '@/lib/utils'
 
@@ -10,80 +12,108 @@ type AnimatedThemeTogglerProps = {
   className?: string
 }
 
-function getStoredThemeChoice(): Theme {
-  if (typeof window === 'undefined') return 'system'
+const TRANSITION_STYLE_ID = 'theme-transition-styles'
 
-  const storedTheme = window.localStorage.getItem('theme')
-  return storedTheme === 'system' ||
-    storedTheme === 'light' ||
-    storedTheme === 'dark'
-    ? storedTheme
-    : 'system'
-}
+export function AnimatedThemeToggler({ className }: AnimatedThemeTogglerProps) {
+  const { resolvedTheme, setTheme } = useTheme()
+  const { animationsDisabled } = useUiPreferences()
+  const [isTransitioning, setIsTransitioning] = React.useState(false)
+  const clipPathId = React.useId().replaceAll(':', '')
+  const isDark = resolvedTheme === 'dark'
 
-export function AnimatedThemeToggler({
-  className,
-}: AnimatedThemeTogglerProps) {
-  const { setTheme } = useTheme()
-  const [selectedTheme, setSelectedTheme] =
-    React.useState<Theme>(getStoredThemeChoice)
-  const themeOptions = [
-    { id: 'system', label: 'System theme', icon: MonitorIcon, className: 'theme-option-system' },
-    { id: 'light', label: 'Light theme', icon: SunIcon, className: 'theme-option-light' },
-    { id: 'dark', label: 'Dark theme', icon: MoonIcon, className: 'theme-option-dark' },
-  ] as const
-  const themeIds = new Set<string>(themeOptions.map((option) => option.id))
+  const toggleTheme = React.useCallback(() => {
+    const switchTheme = () => setTheme(isDark ? 'light' : 'dark')
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
 
-  function isTheme(value: string): value is Theme {
-    return themeIds.has(value)
-  }
+    if (
+      animationsDisabled ||
+      reduceMotion ||
+      isTransitioning ||
+      !document.startViewTransition
+    ) {
+      switchTheme()
+      return
+    }
 
-  React.useLayoutEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      setSelectedTheme(getStoredThemeChoice())
-    })
+    const animation = createAnimation('rectangle', 'top-down', false)
+    let styleElement = document.getElementById(
+      TRANSITION_STYLE_ID,
+    ) as HTMLStyleElement | null
 
-    return () => window.cancelAnimationFrame(frame)
-  }, [])
+    if (!styleElement) {
+      styleElement = document.createElement('style')
+      styleElement.id = TRANSITION_STYLE_ID
+      document.head.appendChild(styleElement)
+    }
+
+    styleElement.textContent = animation.css
+    setIsTransitioning(true)
+
+    const transition = document.startViewTransition(switchTheme)
+    void transition.finished.finally(() => setIsTransitioning(false))
+  }, [animationsDisabled, isDark, isTransitioning, setTheme])
 
   return (
-    <div
-      aria-label="Theme"
-      role="group"
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
+      title={`Switch to ${isDark ? 'light' : 'dark'} theme`}
       className={cn(
-        'theme-selector relative grid h-8 grid-cols-3 items-center rounded-full border border-zinc-200/60 bg-white/60 p-0.5 backdrop-blur-md transition-colors dark:border-zinc-800/60 dark:bg-[#111]/60',
+        'inline-flex size-7 items-center justify-center rounded-full bg-black/[0.035] text-zinc-600 transition-colors duration-200 hover:bg-black/[0.07] hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none disabled:cursor-wait dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/[0.1] dark:hover:text-zinc-50 dark:focus-visible:ring-zinc-500/60',
         className,
       )}
+      disabled={isTransitioning}
     >
-      <span className="theme-selector-pill absolute top-0.5 left-0.5 h-7 w-7 rounded-full bg-zinc-100 transition-[transform,background-color] dark:bg-zinc-800/80" />
-      {themeOptions.map((option) => {
-        const Icon = option.icon
-        const isActive = selectedTheme === option.id
-
-        return (
-          <button
-            key={option.id}
-            type="button"
-            data-id={option.id}
-            data-checked={isActive}
-            aria-label={option.label}
-            aria-pressed={isActive}
-            title={option.label}
-            onClick={() => {
-              if (!isTheme(option.id)) return
-              setSelectedTheme(option.id)
-              setTheme(option.id)
+      <svg
+        aria-hidden="true"
+        className="size-4"
+        fill="currentColor"
+        strokeLinecap="round"
+        viewBox="0 0 32 32"
+      >
+        <clipPath id={clipPathId}>
+          <motion.path
+            initial={false}
+            animate={{ y: isDark ? 10 : 0, x: isDark ? -12 : 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            d="M0-5h30a1 1 0 0 0 9 13v24H0Z"
+          />
+        </clipPath>
+        <g clipPath={`url(#${clipPathId})`}>
+          <motion.circle
+            initial={false}
+            animate={{ r: isDark ? 10 : 8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            cx="16"
+            cy="16"
+            r="8"
+          />
+          <motion.g
+            initial={false}
+            animate={{
+              rotate: isDark ? -100 : 0,
+              scale: isDark ? 0.5 : 1,
+              opacity: isDark ? 0 : 1,
             }}
-            className={cn(
-              'relative z-10 flex h-7 w-7 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none dark:focus-visible:ring-zinc-500/60',
-              option.className,
-              'text-zinc-500 hover:text-zinc-950 data-[checked=true]:text-zinc-950 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50',
-            )}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            stroke="currentColor"
+            strokeWidth="1.5"
+            opacity="1"
           >
-            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-        )
-      })}
-    </div>
+            <path d="M16 5.5v-4" />
+            <path d="M16 30.5v-4" />
+            <path d="M1.5 16h4" />
+            <path d="M26.5 16h4" />
+            <path d="m23.4 8.6 2.8-2.8" />
+            <path d="m5.7 26.3 2.9-2.9" />
+            <path d="m5.8 5.8 2.8 2.8" />
+            <path d="m23.4 23.4 2.9 2.9" />
+          </motion.g>
+        </g>
+      </svg>
+    </button>
   )
 }

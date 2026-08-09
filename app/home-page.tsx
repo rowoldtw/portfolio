@@ -3,16 +3,15 @@ import { useCallback, useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import {
   BriefcaseBusiness,
+  BadgeCheck,
   FolderKanban,
   HomeIcon,
   Mail,
-  NotebookText,
   XIcon,
 } from 'lucide-react'
 import { Magnetic } from '@/components/ui/magnetic'
-import { SectionNav } from '@/components/section-nav'
 import { useHomeSection } from '@/components/home-section-provider'
-import { cn } from '@/lib/utils'
+import { useUiPreferences } from '@/components/ui-preferences-provider'
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -24,15 +23,7 @@ import {
   MorphingDialogDescription,
   MorphingDialogImage,
 } from '@/components/ui/morphing-dialog'
-import Link from 'next/link'
-import { AnimatedBackground } from '@/components/ui/animated-background'
-import {
-  PROJECTS,
-  WORK_EXPERIENCE,
-  BLOG_POSTS,
-  EMAIL,
-  SOCIAL_LINKS,
-} from './data'
+import { PROJECTS, WORK_EXPERIENCE, EMAIL, SKILLS, SOCIAL_LINKS } from './data'
 import { Header } from './header'
 
 const VARIANTS_SECTION = {
@@ -48,15 +39,17 @@ const VIEWPORT_SECTION = { amount: 0.6, once: true } as const
 
 const HOME_SECTIONS = [
   { id: 'home', label: 'Home', icon: HomeIcon },
-  { id: 'projects', label: 'Projects', icon: FolderKanban },
+  { id: 'projects', label: 'Projects / GitHub', icon: FolderKanban },
   { id: 'experience', label: 'Experience', icon: BriefcaseBusiness },
-  { id: 'blog', label: 'Blog', icon: NotebookText },
+  { id: 'skills', label: 'Certifications / Skills', icon: BadgeCheck },
   { id: 'connect', label: 'Connect', icon: Mail },
 ] as const
 
 type HomeSectionId = (typeof HOME_SECTIONS)[number]['id']
 
 const HOME_LAST_SECTION_STORAGE_KEY = 'portfolio:home:last-section-id'
+const LANDING_SECTION_EVENT = 'portfolio:current-page-landing'
+const HOME_SECTION_EVENT = 'portfolio:home-section-select'
 
 function toKnownSectionId(value: string | null): HomeSectionId | null {
   if (!value) return null
@@ -153,12 +146,10 @@ function MagneticSocialLink({
 
 export default function Personal() {
   const scrollContainerRef = useRef<HTMLElement | null>(null)
-  const {
-    activeHomeSectionId,
-    isHomeSectionReady,
-    setActiveHomeSectionId,
-  } = useHomeSection()
-  const activeSectionId = toKnownSectionId(activeHomeSectionId) ?? HOME_SECTIONS[0].id
+  const { activeHomeSectionId, setActiveHomeSectionId } = useHomeSection()
+  const { animationsDisabled } = useUiPreferences()
+  const activeSectionId =
+    toKnownSectionId(activeHomeSectionId) ?? HOME_SECTIONS[0].id
   const intersectionRatiosRef = useRef<Record<string, number>>({})
   const isFirstSectionPersistRef = useRef(true)
   const pendingProgrammaticScrollCleanupRef = useRef<(() => void) | null>(null)
@@ -226,12 +217,12 @@ export default function Personal() {
 
     if (sectionEls.length === 0) return
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (isRestoringSectionRef.current) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isRestoringSectionRef.current) return
 
-          for (const entry of entries) {
-            const id = (entry.target as HTMLElement).dataset.section as
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.section as
             | HomeSectionId
             | undefined
           if (!id) continue
@@ -322,42 +313,49 @@ export default function Personal() {
     }
   }, [])
 
-  function scrollToSection(id: HomeSectionId) {
-    const root = scrollContainerRef.current
-    if (!root) return
+  const scrollToSection = useCallback(
+    (id: HomeSectionId) => {
+      const root = scrollContainerRef.current
+      if (!root) return
 
-    const el = root.querySelector<HTMLElement>(`[data-section="${id}"]`)
-    if (!el) return
+      const el = root.querySelector<HTMLElement>(`[data-section="${id}"]`)
+      if (!el) return
 
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const prefersReducedMotion =
+        animationsDisabled ||
+        (typeof window !== 'undefined' &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 
-    scrollRootToSectionEl(root, el, prefersReducedMotion ? 'auto' : 'smooth')
+      scrollRootToSectionEl(root, el, prefersReducedMotion ? 'auto' : 'smooth')
 
-    el.focus({ preventScroll: true })
-  }
+      el.focus({ preventScroll: true })
+    },
+    [animationsDisabled, scrollRootToSectionEl],
+  )
+
+  useEffect(() => {
+    const handleLandingSection = (event: Event) => {
+      const detail = (event as CustomEvent<{ id?: string }>).detail
+      const id = toKnownSectionId(detail?.id ?? HOME_SECTIONS[0].id)
+
+      scrollToSection(id ?? HOME_SECTIONS[0].id)
+    }
+
+    window.addEventListener(LANDING_SECTION_EVENT, handleLandingSection)
+    window.addEventListener(HOME_SECTION_EVENT, handleLandingSection)
+
+    return () => {
+      window.removeEventListener(LANDING_SECTION_EVENT, handleLandingSection)
+      window.removeEventListener(HOME_SECTION_EVENT, handleLandingSection)
+    }
+  }, [scrollToSection])
 
   return (
     <>
       <motion.main
         ref={scrollContainerRef}
-        className="scrollbar-hidden relative h-dvh w-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain bg-background dark:bg-[#111]"
+        className="scrollbar-hidden bg-background relative h-dvh w-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain dark:bg-[#111]"
       >
-        <SectionNav
-          sections={[...HOME_SECTIONS]}
-          activeId={activeSectionId}
-          className={cn(
-            'transition-opacity duration-150',
-            !isHomeSectionReady && 'pointer-events-none opacity-0',
-          )}
-          onSelect={(id) => {
-            const isKnown = HOME_SECTIONS.some((s) => s.id === id)
-            if (!isKnown) return
-            scrollToSection(id as HomeSectionId)
-          }}
-        />
-
         <motion.section
           id="home"
           data-section="home"
@@ -367,7 +365,7 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
+          className="snap-stop-always scrollbar-hidden bg-background relative h-dvh snap-start overflow-y-auto dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <Header />
@@ -393,10 +391,22 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
+          className="snap-stop-always scrollbar-hidden bg-background h-dvh snap-start overflow-y-auto dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
-            <h3 className="mb-5 text-lg font-medium">Projects</h3>
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <h3 className="text-lg font-medium">
+                Projects / GitHub contributions
+              </h3>
+              <a
+                href="https://github.com/rowoldtw"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 text-sm text-zinc-500 underline decoration-zinc-300 underline-offset-4 transition-colors duration-200 hover:text-zinc-950 dark:text-zinc-400 dark:decoration-zinc-700 dark:hover:text-zinc-50"
+              >
+                Contribution history
+              </a>
+            </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               {PROJECTS.map((project) => (
                 <div key={project.name} className="space-y-2">
@@ -435,7 +445,7 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
+          className="snap-stop-always scrollbar-hidden bg-background h-dvh snap-start overflow-y-auto dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-5 text-lg font-medium">Experience</h3>
@@ -570,46 +580,44 @@ export default function Personal() {
         </motion.section>
 
         <motion.section
-          id="blog"
-          data-section="blog"
+          id="skills"
+          data-section="skills"
           tabIndex={-1}
           initial="hidden"
           whileInView="visible"
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
+          className="snap-stop-always scrollbar-hidden bg-background h-dvh snap-start overflow-y-auto dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
-            <h3 className="mb-3 text-lg font-medium">Blog</h3>
-            <div className="flex flex-col space-y-0">
-              <AnimatedBackground
-                enableHover
-                className="h-full w-full rounded-lg bg-zinc-100 dark:bg-zinc-900/80"
-                transition={{
-                  type: 'spring',
-                  bounce: 0,
-                  duration: 0.2,
-                }}
-              >
-                {BLOG_POSTS.map((post) => (
-                  <Link
-                    key={post.uid}
-                    className="-mx-3 rounded-xl px-3 py-3"
-                    href={post.link}
-                    data-id={post.uid}
-                  >
-                    <div className="flex flex-col space-y-1">
-                      <h4 className="font-normal dark:text-zinc-100">
-                        {post.title}
-                      </h4>
-                      <p className="text-zinc-500 dark:text-zinc-400">
-                        {post.description}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </AnimatedBackground>
+            <h3 className="mb-5 text-lg font-medium">
+              Certifications / Skills
+            </h3>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div>
+                <h4 className="text-sm font-medium text-zinc-950 dark:text-zinc-50">
+                  Skills
+                </h4>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {SKILLS.map((skill) => (
+                    <li
+                      key={skill}
+                      className="rounded-full bg-zinc-100 px-3 py-1.5 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                    >
+                      {skill}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-zinc-200/60 bg-white/60 p-4 dark:border-zinc-800/60 dark:bg-zinc-950/40">
+                <h4 className="text-sm font-medium text-zinc-950 dark:text-zinc-50">
+                  Certifications
+                </h4>
+                <p className="mt-2 text-sm text-pretty text-zinc-500 dark:text-zinc-400">
+                  Certifications and supporting credentials will be added here.
+                </p>
+              </div>
             </div>
           </div>
         </motion.section>
@@ -623,7 +631,7 @@ export default function Personal() {
           viewport={VIEWPORT_SECTION}
           variants={VARIANTS_SECTION}
           transition={TRANSITION_SECTION}
-          className="snap-stop-always scrollbar-hidden h-dvh snap-start overflow-y-auto bg-background dark:bg-[#111]"
+          className="snap-stop-always scrollbar-hidden bg-background h-dvh snap-start overflow-y-auto dark:bg-[#111]"
         >
           <div className="mx-auto box-border flex min-h-full w-full max-w-screen-sm flex-col justify-center px-4 py-20">
             <h3 className="mb-5 text-lg font-medium">Connect</h3>
@@ -642,11 +650,17 @@ export default function Personal() {
                   {link.label}
                 </MagneticSocialLink>
               ))}
+              <a
+                href="/resume.pdf"
+                download
+                className="inline-flex shrink-0 items-center rounded-full bg-zinc-100 px-2.5 py-1 text-sm text-zinc-900 transition-colors duration-200 hover:bg-zinc-950 hover:text-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+              >
+                Download résumé
+              </a>
             </div>
           </div>
         </motion.section>
       </motion.main>
-
     </>
   )
 }

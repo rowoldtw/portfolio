@@ -22,6 +22,9 @@ export function Header() {
         >
           Machine Learning Engineer
         </TextEffect>
+        <p className="mt-1 text-xs text-zinc-500 tabular-nums dark:text-zinc-600">
+          Last update: Q3 2026
+        </p>
       </div>
     </header>
   )

@@ -2,6 +2,14 @@ import createMDX from '@next/mdx'
 
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+  },
   experimental: {
     mdxRs: true,
   },

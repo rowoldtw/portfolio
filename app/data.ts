@@ -15,7 +15,7 @@ type WorkExperience = {
     id: string
 }
 
-type BlogPost = {
+type JournalEntry = {
     title: string
     description: string
     link: string
@@ -72,7 +72,7 @@ export const WORK_EXPERIENCE: WorkExperience[] = [
     },
 ]
 
-export const BLOG_POSTS: BlogPost[] = [
+export const JOURNAL_ENTRIES: JournalEntry[] = [
     {
         title: '01/01/26',
         description: 'A reflection on 2025.',
@@ -111,6 +111,15 @@ export const SOCIAL_LINKS: SocialLink[] = [
         label: 'Instagram',
         link: 'https://www.instagram.com/whoodsy',
     },
+]
+
+export const SKILLS = [
+    'Machine learning',
+    'Neural networks',
+    'Computer vision',
+    'Python',
+    'TypeScript',
+    'React / Next.js',
 ]
 
 export const EMAIL = 'me@woodrowrowoldt.com'

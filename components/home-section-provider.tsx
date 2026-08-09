@@ -9,19 +9,25 @@ type HomeSectionContextValue = {
 }
 
 const HOME_LAST_SECTION_STORAGE_KEY = 'portfolio:home:last-section-id'
-const HOME_SECTION_IDS = new Set(['home', 'projects', 'experience', 'blog', 'connect'])
+const HOME_SECTION_IDS = new Set([
+  'home',
+  'projects',
+  'experience',
+  'skills',
+  'connect',
+])
 const HomeSectionContext = React.createContext<HomeSectionContextValue | null>(
   null,
 )
 
 function getInitialHomeSectionId() {
-  if (typeof window === 'undefined') return 'home'
-
   const hashId = window.location.hash.replace('#', '')
   if (HOME_SECTION_IDS.has(hashId)) return hashId
 
   try {
-    const storedId = window.sessionStorage.getItem(HOME_LAST_SECTION_STORAGE_KEY)
+    const storedId = window.sessionStorage.getItem(
+      HOME_LAST_SECTION_STORAGE_KEY,
+    )
     return storedId && HOME_SECTION_IDS.has(storedId) ? storedId : 'home'
   } catch {
     return 'home'

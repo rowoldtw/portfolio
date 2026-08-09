@@ -6,6 +6,7 @@ import {
   cloneElement,
   isValidElement,
   ReactElement,
+  type MouseEvent,
   useState,
   useId,
 } from 'react'
@@ -15,6 +16,9 @@ type AnimatedBackgroundChildProps = {
   'data-checked'?: string
   className?: string
   children?: React.ReactNode
+  onClick?: (event: MouseEvent<HTMLElement>) => void
+  onMouseEnter?: (event: MouseEvent<HTMLElement>) => void
+  onMouseLeave?: (event: MouseEvent<HTMLElement>) => void
 }
 
 export type AnimatedBackgroundProps = {
@@ -59,11 +63,20 @@ export function AnimatedBackground({
 
     const interactionProps = enableHover
       ? {
-          onMouseEnter: () => handleSetActiveId(id),
-          onMouseLeave: () => handleSetActiveId(null),
+          onMouseEnter: (event: MouseEvent<HTMLElement>) => {
+            child.props.onMouseEnter?.(event)
+            handleSetActiveId(id)
+          },
+          onMouseLeave: (event: MouseEvent<HTMLElement>) => {
+            child.props.onMouseLeave?.(event)
+            handleSetActiveId(null)
+          },
         }
       : {
-          onClick: () => handleSetActiveId(id),
+          onClick: (event: MouseEvent<HTMLElement>) => {
+            child.props.onClick?.(event)
+            handleSetActiveId(id)
+          },
         }
 
     return cloneElement(
