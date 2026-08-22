@@ -1,118 +1,164 @@
 type Project = {
-    name: string
-    description: string
-    link: string
-    video: string
-    id: string
+  name: string
+  description: string
+  status: string
+  id: string
+}
+
+type ConceptIdea = {
+  name: string
+  description: string
+  status: string
+  id: string
 }
 
 type WorkExperience = {
-    company: string
-    title: string
-    start: string
-    end: string
-    link: string
-    id: string
+  company: string
+  title: string
+  date: string
+  id: string
 }
 
-type BlogPost = {
-    title: string
-    description: string
-    link: string
-    uid: string
+type JournalEntry = {
+  title: string
+  description: string
+  link: string
+  uid: string
 }
 
 type SocialLink = {
-    label: string
-    link: string
+  label: string
+  link: string
 }
 
 export const PROJECTS: Project[] = [
-    {
-        name: 'Chimera',
-        description:
-            'AI-powered fitness tracker with personalized workouts and progress tracking.',
-        link: 'https://woodrowrowoldt.com',
-        video:
-            'https://res.cloudinary.com/read-cv/video/upload/t_v_b/v1/1/profileItems/W2azTw5BVbMXfj7F53G92hMVIn32/newProfileItem/d898be8a-7037-4c71-af0c-8997239b050d.mp4?_a=DATAdtAAZAA0',
-        id: 'project1',
-    },
-    {
-        name: 'Astraea',
-        description: 'Powerful yet efficient AI agent optimized for facial recognition and analysis.',
-        link: 'https://woodrowrowoldt.com',
-        video:
-            'https://res.cloudinary.com/read-cv/video/upload/t_v_b/v1/1/profileItems/W2azTw5BVbMXfj7F53G92hMVIn32/XSfIvT7BUWbPRXhrbLed/ee6871c9-8400-49d2-8be9-e32675eabf7e.mp4?_a=DATAdtAAZAA0',
-        id: 'project2',
-    },
+  {
+    name: 'Better PCPP',
+    description:
+      'An interactive 3D PC-building experience with optimized part indexing, accurate performance estimates grounded in real-world data, and step-by-step, part-specific guides.',
+    status: 'Coming soon',
+    id: 'project1',
+  },
+  {
+    name: 'Astraea',
+    description:
+      'A post-trained LLM paired with LiDAR scanning on supported iPhone models to measure facial geometry, compare face shapes against a dataset, and assess potential health conditions and appearance characteristics from captured data rather than guesses.',
+    status: 'Coming soon',
+    id: 'project2',
+  },
+]
+
+export const CONCEPT_IDEAS: ConceptIdea[] = [
+  {
+    name: 'AirPods Max redesign',
+    description: 'A rounder enclosure with planar drivers and an H3 chip.',
+    status: 'Renders coming soon',
+    id: 'concept1',
+  },
+  {
+    name: 'iPhone Camera Control redesign',
+    description:
+      'Touch ID integrated into Camera Control, replacing physical volume buttons with a haptic slider.',
+    status: 'Renders coming soon',
+    id: 'concept2',
+  },
 ]
 
 export const WORK_EXPERIENCE: WorkExperience[] = [
-    {
-        company: 'Chimera',
-        title: 'Founder',
-        start: '2024',
-        end: 'Present',
-        link: 'https://woodrowrowoldt.com',
-        id: 'work1',
-    },
-    {
-        company: 'Freelance',
-        title: 'Care Giver',
-        start: '2023',
-        end: '2024',
-        link: 'https://woodrowrowoldt.com',
-        id: 'work2',
-    },
-    {
-        company: 'Sagano, Oak Park',
-        title: 'Waiter / Server',
-        start: '2022',
-        end: '2023',
-        link: 'https://woodrowrowoldt.com',
-        id: 'work3',
-    },
+  {
+    company: "Wally's Hearth",
+    title: 'Volunteer IT Support',
+    date: '2026',
+    id: 'work1',
+  },
+  {
+    company: 'Oak Park, IL',
+    title: 'Care Giver',
+    date: '2023 – 2024',
+    id: 'work2',
+  },
+  {
+    company: 'Sagano, Oak Park, IL',
+    title: 'Waiter / Server',
+    date: '2022 – 2023',
+    id: 'work3',
+  },
 ]
 
-export const BLOG_POSTS: BlogPost[] = [
-    {
-        title: '01/01/26',
-        description: 'A reflection on 2025.',
-        link: '/blog/01-01-26',
-        uid: 'blog-1',
-    },
-    {
-        title: '02/01/26',
-        description:
-            'First time contributing to OSS.',
-        link: '/blog/02-01-26',
-        uid: 'blog-2',
-    },
-    {
-        title: '03/01/26',
-        description: 'Building Astraea.',
-        link: '/blog/03-01-26',
-        uid: 'blog-3',
-    },
+export const JOURNAL_ENTRIES: JournalEntry[] = [
+  {
+    title: '01/01/26',
+    description: 'A reflection on 2025.',
+    link: '/blog/01-01-26',
+    uid: 'blog-1',
+  },
+  {
+    title: '02/01/26',
+    description: 'First time contributing to OSS.',
+    link: '/blog/02-01-26',
+    uid: 'blog-2',
+  },
+  {
+    title: '03/01/26',
+    description: 'Building Astraea.',
+    link: '/blog/03-01-26',
+    uid: 'blog-3',
+  },
 ]
 
 export const SOCIAL_LINKS: SocialLink[] = [
-    {
-        label: 'GitHub',
-        link: 'https://github.com/rowoldtw',
-    },
-    {
-        label: 'X',
-        link: 'https://x.com/wdsywrld',
-    },
-    {
-        label: 'LinkedIn',
-        link: 'https://www.linkedin.com/in/woodrow-rowoldt',
-    },
-    {
-        label: 'Instagram',
-        link: 'https://www.instagram.com/whoodsy',
-    },
+  {
+    label: 'GitHub',
+    link: 'https://github.com/rowoldtw',
+  },
+  {
+    label: 'X',
+    link: 'https://x.com/wdsywrld',
+  },
+  {
+    label: 'LinkedIn',
+    link: 'https://www.linkedin.com/in/woodrow-rowoldt',
+  },
+  {
+    label: 'Instagram',
+    link: 'https://www.instagram.com/whoodsy',
+  },
+  {
+    label: 'LeetCode',
+    link: 'https://leetcode.com/u/rowoldtw/',
+  },
+]
+
+export const SKILLS = [
+  'Python',
+  'TypeScript',
+  'React / Next.js',
+  'Bun',
+  'Three.js',
+  'Machine learning',
+  'Neural networks',
+  'Computer vision',
+]
+
+export const FAMILIAR_TOOLS = [
+  'Convex',
+  'Clerk',
+  'Stripe',
+  'Slack',
+  'Linear',
+  'Git / GitHub',
+  'Codex',
+  'Notion',
+  'Zed',
+  'Vercel',
+  'Resend',
+]
+
+export const CERTIFICATIONS = [
+  'Harvard Online CS50x — 2025',
+  'Harvard Online CS50xAI (Python)',
+  'Web Animations (animations.dev)',
+  'Google IT Support',
 ]
 
 export const EMAIL = 'me@woodrowrowoldt.com'

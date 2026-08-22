@@ -349,6 +349,7 @@ function MorphingDialogDescription({
 
 export type MorphingDialogImageProps = {
   src: string
+  darkSrc?: string
   alt: string
   className?: string
   style?: React.CSSProperties
@@ -356,11 +357,37 @@ export type MorphingDialogImageProps = {
 
 function MorphingDialogImage({
   src,
+  darkSrc,
   alt,
   className,
   style,
 }: MorphingDialogImageProps) {
   const { uniqueId } = useMorphingDialog()
+
+  if (darkSrc) {
+    return (
+      <motion.div
+        role="img"
+        aria-label={alt}
+        className={cn('relative overflow-hidden', className)}
+        layoutId={`dialog-img-${uniqueId}`}
+        style={style}
+      >
+        <motion.img
+          src={src}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 size-full object-cover dark:hidden"
+        />
+        <motion.img
+          src={darkSrc}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 hidden size-full object-cover dark:block"
+        />
+      </motion.div>
+    )
+  }
 
   return (
     <motion.img

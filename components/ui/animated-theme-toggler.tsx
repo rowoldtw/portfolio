@@ -1,100 +1,112 @@
 'use client'
 
 import * as React from 'react'
-import { AnimatePresence, motion } from 'motion/react'
-import { MoonIcon, SunIcon } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { motion } from 'motion/react'
+import { useTheme } from '@/components/theme-provider'
+import { createAnimation } from '@/components/ui/skiper-ui/skiper26'
 
 import { cn } from '@/lib/utils'
 
 type AnimatedThemeTogglerProps = {
   className?: string
-  duration?: number
 }
 
-export function AnimatedThemeToggler({
-  className,
-  duration = 400,
-}: AnimatedThemeTogglerProps) {
-  const { setTheme, resolvedTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
-  const [canAnimate, setCanAnimate] = React.useState(false)
+const TRANSITION_STYLE_ID = 'theme-transition-styles'
 
-  React.useEffect(() => {
-    const frame = window.requestAnimationFrame(() => setMounted(true))
-    return () => window.cancelAnimationFrame(frame)
-  }, [])
+export function AnimatedThemeToggler({ className }: AnimatedThemeTogglerProps) {
+  const { resolvedTheme, setTheme } = useTheme()
+  const [isTransitioning, setIsTransitioning] = React.useState(false)
+  const clipPathId = React.useId().replaceAll(':', '')
+  const isDark = resolvedTheme === 'dark'
 
-  React.useEffect(() => {
-    if (!mounted) return
-    const frame = window.requestAnimationFrame(() => setCanAnimate(true))
-    return () => window.cancelAnimationFrame(frame)
-  }, [mounted])
+  const toggleTheme = React.useCallback(() => {
+    const switchTheme = () => setTheme(isDark ? 'light' : 'dark')
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
 
-  const isDark = mounted && resolvedTheme === 'dark'
-  const seconds = duration / 1000
+    if (reduceMotion || isTransitioning || !document.startViewTransition) {
+      switchTheme()
+      return
+    }
+
+    const animation = createAnimation('rectangle', 'top-down', false)
+    let styleElement = document.getElementById(
+      TRANSITION_STYLE_ID,
+    ) as HTMLStyleElement | null
+
+    if (!styleElement) {
+      styleElement = document.createElement('style')
+      styleElement.id = TRANSITION_STYLE_ID
+      document.head.appendChild(styleElement)
+    }
+
+    styleElement.textContent = animation.css
+    setIsTransitioning(true)
+
+    const transition = document.startViewTransition(switchTheme)
+    void transition.finished.finally(() => setIsTransitioning(false))
+  }, [isDark, isTransitioning, setTheme])
 
   return (
-    <motion.button
+    <button
       type="button"
-      aria-label="Toggle theme"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      initial={false}
+      onClick={toggleTheme}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
+      title={`Switch to ${isDark ? 'light' : 'dark'} theme`}
       className={cn(
-        'relative inline-flex h-8 w-14 items-center rounded-full border border-zinc-200/60 bg-white/60 backdrop-blur-md transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none dark:border-zinc-800/60 dark:bg-[#121212]/60 dark:focus-visible:ring-zinc-500/60',
+        'inline-flex size-7 items-center justify-center rounded-full bg-black/[0.035] text-zinc-600 transition-colors duration-200 hover:bg-black/[0.07] hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none disabled:cursor-wait dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/[0.1] dark:hover:text-zinc-50 dark:focus-visible:ring-zinc-500/60',
         className,
       )}
+      disabled={isTransitioning}
     >
-      <span className="sr-only">Toggle theme</span>
-
-      <motion.span
-        className={cn(
-          'pointer-events-none absolute top-[3px] left-[3px] flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-zinc-200/60 dark:bg-zinc-950 dark:ring-zinc-800/60',
-          !mounted && 'opacity-0',
-        )}
-        animate={{ x: isDark ? 24 : 0 }}
-        transition={
-          canAnimate
-            ? { type: 'spring', bounce: 0, duration: seconds }
-            : { duration: 0 }
-        }
+      <svg
+        aria-hidden="true"
+        className="size-4"
+        fill="currentColor"
+        strokeLinecap="round"
+        viewBox="0 0 32 32"
       >
-        <AnimatePresence mode="wait" initial={false}>
-          {isDark ? (
-            <motion.span
-              key="moon"
-              initial={
-                canAnimate ? { opacity: 0, rotate: -90, scale: 0.65 } : false
-              }
-              animate={{ opacity: 1, rotate: 0, scale: 1 }}
-              exit={{ opacity: 0, rotate: 90, scale: 0.65 }}
-              transition={{
-                duration: canAnimate ? seconds : 0,
-                ease: 'easeInOut',
-              }}
-              className="text-zinc-200"
-            >
-              <MoonIcon className="h-3.5 w-3.5" />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="sun"
-              initial={
-                canAnimate ? { opacity: 0, rotate: 90, scale: 0.65 } : false
-              }
-              animate={{ opacity: 1, rotate: 0, scale: 1 }}
-              exit={{ opacity: 0, rotate: -90, scale: 0.65 }}
-              transition={{
-                duration: canAnimate ? seconds : 0,
-                ease: 'easeInOut',
-              }}
-              className="text-zinc-700"
-            >
-              <SunIcon className="h-3.5 w-3.5" />
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </motion.span>
-    </motion.button>
+        <clipPath id={clipPathId}>
+          <motion.path
+            initial={false}
+            animate={{ y: isDark ? 10 : 0, x: isDark ? -12 : 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            d="M0-5h30a1 1 0 0 0 9 13v24H0Z"
+          />
+        </clipPath>
+        <g clipPath={`url(#${clipPathId})`}>
+          <motion.circle
+            initial={false}
+            animate={{ r: isDark ? 10 : 8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            cx="16"
+            cy="16"
+            r="8"
+          />
+          <motion.g
+            initial={false}
+            animate={{
+              rotate: isDark ? -100 : 0,
+              scale: isDark ? 0.5 : 1,
+              opacity: isDark ? 0 : 1,
+            }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            stroke="currentColor"
+            strokeWidth="1.5"
+            opacity="1"
+          >
+            <path d="M16 5.5v-4" />
+            <path d="M16 30.5v-4" />
+            <path d="M1.5 16h4" />
+            <path d="M26.5 16h4" />
+            <path d="m23.4 8.6 2.8-2.8" />
+            <path d="m5.7 26.3 2.9-2.9" />
+            <path d="m5.8 5.8 2.8 2.8" />
+            <path d="m23.4 23.4 2.9 2.9" />
+          </motion.g>
+        </g>
+      </svg>
+    </button>
   )
 }
