@@ -1,10 +1,12 @@
 'use client'
 import { TextEffect } from '@/components/ui/text-effect'
+import { TextLoop } from '@/components/ui/text-loop'
+import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
-export function Header() {
+export function Header({ className }: { className?: string }) {
   return (
-    <header className="mb-8 flex items-center justify-between">
+    <header className={cn('mb-8 flex items-center justify-between', className)}>
       <div>
         <Link
           href="/"
@@ -22,9 +24,14 @@ export function Header() {
         >
           Machine Learning Engineer
         </TextEffect>
-        <p className="mt-1 text-xs text-zinc-500 tabular-nums dark:text-zinc-600">
-          Last update: Q3 2026
-        </p>
+        <TextLoop
+          className="mt-1 text-xs text-zinc-500 tabular-nums dark:text-zinc-600"
+          interval={4}
+          transition={{ duration: 0.25 }}
+        >
+          <p>Last update: Q3 2026</p>
+          <p>Three.js refresh: Q4 2026</p>
+        </TextLoop>
       </div>
     </header>
   )

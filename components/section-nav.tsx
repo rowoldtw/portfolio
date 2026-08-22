@@ -33,7 +33,7 @@ export function SectionNav({
   )
 
   return (
-    <div className="fixed top-1/2 right-[max(1rem,env(safe-area-inset-right))] z-50 -translate-y-1/2">
+    <div className="fixed top-[max(1rem,env(safe-area-inset-top))] left-1/2 z-50 -translate-x-1/2 sm:top-1/2 sm:right-[max(1rem,env(safe-area-inset-right))] sm:left-auto sm:translate-x-0 sm:-translate-y-1/2">
       <nav
         aria-label="Section navigation"
         data-active-section-ready={activeIndicatorReady}
@@ -42,13 +42,13 @@ export function SectionNav({
           className,
         )}
       >
-        <div className="relative flex flex-col gap-1">
+        <div className="relative flex gap-1 sm:flex-col">
           <AnimatePresence initial={false}>
             {hoveredIndex !== null && sections[hoveredIndex] && (
               <motion.div
                 id="section-nav-tooltip"
                 role="tooltip"
-                className="pointer-events-none absolute top-0 right-full mr-2 flex h-7 items-center rounded-full bg-white px-2.5 text-xs whitespace-nowrap text-zinc-950 shadow-sm ring-1 ring-zinc-200/70 dark:bg-zinc-950 dark:text-zinc-50 dark:ring-zinc-800/70"
+                className="pointer-events-none absolute top-0 right-full mr-2 hidden h-7 items-center rounded-full bg-white px-2.5 text-xs whitespace-nowrap text-zinc-950 shadow-sm ring-1 ring-zinc-200/70 sm:flex dark:bg-zinc-950 dark:text-zinc-50 dark:ring-zinc-800/70"
                 initial={{
                   clipPath: 'inset(0 0 0 100% round 999px)',
                   opacity: 0,
@@ -78,22 +78,41 @@ export function SectionNav({
             )}
           </AnimatePresence>
           {activeIndicatorReady ? (
-            <motion.span
-              aria-hidden="true"
-              className="pointer-events-none absolute top-0 left-0 size-9 rounded-full bg-white shadow-sm dark:bg-zinc-800"
-              initial={false}
-              animate={{ y: activeIndex * 40 }}
-              transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
-            />
+            <>
+              <motion.span
+                aria-hidden="true"
+                className="pointer-events-none absolute top-0 left-0 size-9 rounded-full bg-white shadow-sm sm:hidden dark:bg-zinc-800"
+                initial={false}
+                animate={{ x: activeIndex * 40 }}
+                transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
+              />
+              <motion.span
+                aria-hidden="true"
+                className="pointer-events-none absolute top-0 left-0 hidden size-9 rounded-full bg-white shadow-sm sm:block dark:bg-zinc-800"
+                initial={false}
+                animate={{ y: activeIndex * 40 }}
+                transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
+              />
+            </>
           ) : (
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute top-0 left-0 size-9 rounded-full bg-white shadow-sm dark:bg-zinc-800"
-              style={{
-                transform:
-                  'translateY(calc(var(--initial-home-section-index, 0) * 40px))',
-              }}
-            />
+            <>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute top-0 left-0 size-9 rounded-full bg-white shadow-sm sm:hidden dark:bg-zinc-800"
+                style={{
+                  transform:
+                    'translateX(calc(var(--initial-home-section-index, 0) * 40px))',
+                }}
+              />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute top-0 left-0 hidden size-9 rounded-full bg-white shadow-sm sm:block dark:bg-zinc-800"
+                style={{
+                  transform:
+                    'translateY(calc(var(--initial-home-section-index, 0) * 40px))',
+                }}
+              />
+            </>
           )}
           {sections.map((section, index) => {
             const isActive = section.id === activeId

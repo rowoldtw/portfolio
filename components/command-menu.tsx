@@ -12,15 +12,13 @@ import {
   Mail,
   Monitor,
   Moon,
-  PauseCircle,
   Play,
-  RotateCcw,
-  Sparkles,
   Sun,
   UserRound,
 } from 'lucide-react'
 import { PRELOADER_REPLAY_EVENT } from '@/components/site-preloader'
 import { useTheme } from '@/components/theme-provider'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import {
   CommandDialog,
   CommandEmpty,
@@ -31,21 +29,35 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import { useUiPreferences } from '@/components/ui-preferences-provider'
 
 const LANDING_SECTION_EVENT = 'portfolio:current-page-landing'
 
 const PAGE_COMMANDS = [
-  { label: 'Professional', href: '/', icon: BriefcaseBusiness },
-  { label: 'Gallery', href: '/gallery', icon: GalleryHorizontal },
-  { label: 'Personal', href: '/personal', icon: UserRound },
+  {
+    label: 'Professional',
+    href: '/',
+    icon: BriefcaseBusiness,
+    disabled: false,
+  },
+  {
+    label: 'Gallery',
+    href: '/gallery',
+    icon: GalleryHorizontal,
+    disabled: true,
+  },
+  {
+    label: 'Personal',
+    href: '/personal',
+    icon: UserRound,
+    disabled: true,
+  },
 ] as const
 
 const SECTION_COMMANDS = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'projects', label: 'Projects / GitHub', icon: FolderGit2 },
   { id: 'experience', label: 'Experience', icon: BriefcaseBusiness },
-  { id: 'skills', label: 'Certifications / Skills', icon: BadgeCheck },
+  { id: 'skills', label: 'Skills / Certifications', icon: BadgeCheck },
   { id: 'connect', label: 'Connect', icon: Mail },
 ] as const
 
@@ -58,12 +70,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { setTheme } = useTheme()
-  const {
-    animationsDisabled,
-    glowDisabled,
-    setAnimationsDisabled,
-    setGlowDisabled,
-  } = useUiPreferences()
+  const prefersReducedMotion = usePrefersReducedMotion()
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -103,7 +110,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
 
     window.scrollTo({
       top: 0,
-      behavior: animationsDisabled ? 'auto' : 'smooth',
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
     })
   }
 
@@ -117,11 +124,6 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
       `[data-section-nav-id="${id}"]`,
     )
     navButton?.click()
-  }
-
-  const resetUi = () => {
-    setAnimationsDisabled(false)
-    setGlowDisabled(false)
   }
 
   const replayPreloader = () => {
@@ -154,8 +156,13 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
               <CommandItem
                 key={item.href}
                 value={`${item.label} page`}
-                onSelect={() => runCommand(() => goToPage(item.href))}
-                className="rounded-lg px-2 py-2"
+                disabled={item.disabled}
+                onSelect={
+                  item.disabled
+                    ? undefined
+                    : () => runCommand(() => goToPage(item.href))
+                }
+                className="rounded-lg px-2 py-2 data-[disabled=true]:line-through"
               >
                 <Icon aria-hidden="true" />
                 <span>{item.label}</span>
@@ -227,32 +234,6 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
           >
             <Play aria-hidden="true" />
             <span>Replay preloader</span>
-          </CommandItem>
-          <CommandItem
-            value={`${animationsDisabled ? 'Enable' : 'Disable'} animations`}
-            onSelect={() =>
-              runCommand(() => setAnimationsDisabled(!animationsDisabled))
-            }
-            className="rounded-lg px-2 py-2"
-          >
-            <PauseCircle aria-hidden="true" />
-            <span>{animationsDisabled ? 'Enable' : 'Disable'} animations</span>
-          </CommandItem>
-          <CommandItem
-            value={`${glowDisabled ? 'Enable' : 'Disable'} glow`}
-            onSelect={() => runCommand(() => setGlowDisabled(!glowDisabled))}
-            className="rounded-lg px-2 py-2"
-          >
-            <Sparkles aria-hidden="true" />
-            <span>{glowDisabled ? 'Enable' : 'Disable'} glow</span>
-          </CommandItem>
-          <CommandItem
-            value="Reset interface preferences"
-            onSelect={() => runCommand(resetUi)}
-            className="rounded-lg px-2 py-2"
-          >
-            <RotateCcw aria-hidden="true" />
-            <span>Reset interface preferences</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

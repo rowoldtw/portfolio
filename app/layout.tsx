@@ -60,20 +60,10 @@ const themeInitScript = `
       document.documentElement.classList.toggle('light', resolvedTheme === 'light');
       document.documentElement.dataset.themeChoice = theme;
       document.documentElement.dataset.themeReady = 'false';
-      document.documentElement.dataset.animationsDisabled =
-        window.localStorage.getItem('portfolio:ui:disable-animations') === 'true'
-          ? 'true'
-          : 'false';
-      document.documentElement.dataset.glowDisabled =
-        window.localStorage.getItem('portfolio:ui:disable-glow') === 'true'
-          ? 'true'
-          : 'false';
-      const animationsDisabled =
-        window.localStorage.getItem('portfolio:ui:disable-animations') === 'true';
       const hasSeenIntroPreloader =
         window.localStorage.getItem('portfolio:intro-preloader-seen') === 'true';
       document.documentElement.dataset.showIntroPreloader =
-        !animationsDisabled && !hasSeenIntroPreloader ? 'true' : 'false';
+        !hasSeenIntroPreloader ? 'true' : 'false';
       const homeSectionIds = ['home', 'projects', 'experience', 'skills', 'connect'];
       const hashSectionId = window.location.hash.replace('#', '');
       const storedHomeSectionId = window.sessionStorage.getItem('portfolio:home:last-section-id');
@@ -113,24 +103,10 @@ export default function RootLayout({
           <UiPreferencesProvider>
             <SitePreloader />
             <HomeSectionProvider>
-              <div className="bg-background hidden min-h-screen w-full font-(family-name:--font-inter-tight) md:block dark:bg-[#111]">
+              <div className="bg-background min-h-screen w-full font-(family-name:--font-inter-tight) dark:bg-[#111]">
                 {children}
               </div>
-              <main className="bg-background flex min-h-dvh w-full items-center px-6 py-12 font-(family-name:--font-inter-tight) md:hidden dark:bg-[#111]">
-                <section className="mx-auto max-w-sm">
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    Mobile preview unavailable
-                  </p>
-                  <h1 className="mt-3 text-2xl font-medium text-zinc-950 dark:text-zinc-50">
-                    This site is being tested for desktop first.
-                  </h1>
-                  <p className="mt-4 text-base leading-7 text-zinc-600 dark:text-zinc-400">
-                    Please visit from a tablet or desktop while the mobile
-                    layout is being prepared.
-                  </p>
-                </section>
-              </main>
-              <div className="hidden md:block">
+              <div>
                 <PersistentSectionNav />
                 <Footer />
               </div>

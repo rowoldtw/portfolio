@@ -2,13 +2,13 @@
 
 import * as React from 'react'
 import SplitReveal from '@/components/animata/preloader/split-reveal'
-import { useUiPreferences } from '@/components/ui-preferences-provider'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 
 const PRELOADER_STORAGE_KEY = 'portfolio:intro-preloader-seen'
 export const PRELOADER_REPLAY_EVENT = 'portfolio:replay-intro-preloader'
 
 export function SitePreloader() {
-  const { animationsDisabled } = useUiPreferences()
+  const prefersReducedMotion = usePrefersReducedMotion()
   const [active, setActive] = React.useState(true)
   const [runId, setRunId] = React.useState(0)
 
@@ -48,9 +48,9 @@ export function SitePreloader() {
       progress={{ loaded: 1, total: 1 }}
       backgroundColor="#52525b"
       foregroundColor="#fafafa"
-      revealDuration={animationsDisabled ? 0.001 : 1.1}
-      progressFadeMs={animationsDisabled ? 0 : 250}
-      holdMs={animationsDisabled ? 0 : 600}
+      revealDuration={prefersReducedMotion ? 0.001 : 1.1}
+      progressFadeMs={prefersReducedMotion ? 0 : 250}
+      holdMs={prefersReducedMotion ? 0 : 600}
       lockScroll
       onComplete={finish}
     >

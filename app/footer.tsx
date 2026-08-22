@@ -1,5 +1,11 @@
 'use client'
-import { type MouseEvent, useEffect, useRef, useState } from 'react'
+import {
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Command as CommandIcon } from 'lucide-react'
@@ -10,15 +16,20 @@ import {
   type PagePreview,
   PagePreviewTooltip,
 } from '@/components/ui/page-preview-tooltip'
-import { useUiPreferences } from '@/components/ui-preferences-provider'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import { cn } from '@/lib/utils'
 
 const PAGE_LINKS = [
-  { id: 'professional', label: 'Professional', href: '/' },
-  { id: 'gallery', label: 'Gallery', href: '/gallery' },
-  { id: 'personal', label: 'Personal', href: '/personal' },
+  { id: 'professional', label: 'Professional', href: '/', disabled: false },
+  { id: 'gallery', label: 'Gallery', href: '/gallery', disabled: true },
+  { id: 'personal', label: 'Personal', href: '/personal', disabled: true },
 ] as const
 const LANDING_SECTION_EVENT = 'portfolio:current-page-landing'
+
+type ActivePagePreview = {
+  pathname: string
+  preview: PagePreview
+}
 
 function getActivePageId(pathname: string) {
   if (pathname.startsWith('/gallery')) return 'gallery'
@@ -32,49 +43,63 @@ export function Footer({ className }: { className?: string }) {
   const pathname = usePathname()
   const activePageId = getActivePageId(pathname)
   const [isCommandMenuOpen, setIsCommandMenuOpen] = useState(false)
-  const [pagePreview, setPagePreview] = useState<PagePreview | null>(null)
+  const [activePagePreview, setActivePagePreview] =
+    useState<ActivePagePreview | null>(null)
   const [pagePreviewX, setPagePreviewX] = useState(0)
   const pagesNavRef = useRef<HTMLElement | null>(null)
-  const suppressPagePreviewRef = useRef(false)
-  const { animationsDisabled } = useUiPreferences()
+  const prefersReducedMotion = usePrefersReducedMotion()
+  const pagePreview =
+    activePagePreview?.pathname === pathname ? activePagePreview.preview : null
 
-  useEffect(() => {
-    const suppressPagePreview = () => {
-      suppressPagePreviewRef.current = true
-      setPagePreview(null)
-    }
+  const showPagePreview = useCallback(
+    (target: HTMLAnchorElement, preview: PagePreview) => {
+      const navRect = pagesNavRef.current?.getBoundingClientRect()
+      if (!navRect) return
 
-    window.addEventListener('blur', suppressPagePreview)
-    window.addEventListener('focus', suppressPagePreview)
-    window.addEventListener('pagehide', suppressPagePreview)
-    window.addEventListener('pageshow', suppressPagePreview)
-    document.addEventListener('visibilitychange', suppressPagePreview)
+      const targetRect = target.getBoundingClientRect()
+      setPagePreviewX(targetRect.left - navRect.left + targetRect.width / 2)
+      setActivePagePreview({ pathname, preview })
+    },
+    [pathname],
+  )
 
-    return () => {
-      window.removeEventListener('blur', suppressPagePreview)
-      window.removeEventListener('focus', suppressPagePreview)
-      window.removeEventListener('pagehide', suppressPagePreview)
-      window.removeEventListener('pageshow', suppressPagePreview)
-      document.removeEventListener('visibilitychange', suppressPagePreview)
+  const clearPagePreviewSelection = useCallback(() => {
+    setActivePagePreview(null)
+
+    const activeElement = document.activeElement
+    if (
+      activeElement instanceof HTMLElement &&
+      pagesNavRef.current?.contains(activeElement)
+    ) {
+      activeElement.blur()
     }
   }, [])
 
-  const showPagePreview = (target: HTMLAnchorElement, preview: PagePreview) => {
-    if (suppressPagePreviewRef.current) return
+  useEffect(() => {
+    window.addEventListener('blur', clearPagePreviewSelection)
+    window.addEventListener('focus', clearPagePreviewSelection)
+    window.addEventListener('pagehide', clearPagePreviewSelection)
+    window.addEventListener('pageshow', clearPagePreviewSelection)
+    document.addEventListener('visibilitychange', clearPagePreviewSelection)
 
-    const navRect = pagesNavRef.current?.getBoundingClientRect()
-    if (!navRect) return
-
-    const targetRect = target.getBoundingClientRect()
-    setPagePreviewX(targetRect.left - navRect.left + targetRect.width / 2)
-    setPagePreview(preview)
-  }
+    return () => {
+      window.removeEventListener('blur', clearPagePreviewSelection)
+      window.removeEventListener('focus', clearPagePreviewSelection)
+      window.removeEventListener('pagehide', clearPagePreviewSelection)
+      window.removeEventListener('pageshow', clearPagePreviewSelection)
+      document.removeEventListener(
+        'visibilitychange',
+        clearPagePreviewSelection,
+      )
+    }
+  }, [clearPagePreviewSelection])
 
   const handlePageLinkClick = (
     event: MouseEvent<HTMLAnchorElement>,
     link: (typeof PAGE_LINKS)[number],
   ) => {
-    setPagePreview(null)
+    event.currentTarget.blur()
+    clearPagePreviewSelection()
 
     const isCurrentPage =
       link.href === '/' ? pathname === '/' : pathname === link.href
@@ -91,7 +116,7 @@ export function Footer({ className }: { className?: string }) {
 
     window.scrollTo({
       top: 0,
-      behavior: animationsDisabled ? 'auto' : 'smooth',
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
     })
   }
 
@@ -104,7 +129,7 @@ export function Footer({ className }: { className?: string }) {
         />
         <footer
           className={cn(
-            'floating-nav-chrome pointer-events-auto rounded-[2rem] border border-white/70 bg-[#f4f4f4]/50 px-3 py-2 backdrop-blur-xl dark:border-white/10 dark:bg-[#181818]/75',
+            'floating-nav-chrome pointer-events-auto rounded-[2rem] border border-white/70 bg-[#f4f4f4]/50 p-2 backdrop-blur-xl dark:border-white/10 dark:bg-[#181818]/75',
             className,
           )}
         >
@@ -113,10 +138,7 @@ export function Footer({ className }: { className?: string }) {
               <nav
                 ref={pagesNavRef}
                 aria-label="Pages"
-                onMouseLeave={() => {
-                  suppressPagePreviewRef.current = false
-                  setPagePreview(null)
-                }}
+                onMouseLeave={() => setActivePagePreview(null)}
                 className="relative flex items-center rounded-full bg-black/[0.035] p-0.5 dark:bg-white/[0.06]"
               >
                 <PagePreviewTooltip preview={pagePreview} x={pagePreviewX} />
@@ -129,24 +151,36 @@ export function Footer({ className }: { className?: string }) {
                     duration: 0.2,
                   }}
                 >
-                  {PAGE_LINKS.map((link) => (
-                    <Link
-                      key={link.id}
-                      href={link.href}
-                      data-id={link.id}
-                      onMouseEnter={(event) =>
-                        showPagePreview(event.currentTarget, link)
-                      }
-                      onFocus={(event) =>
-                        showPagePreview(event.currentTarget, link)
-                      }
-                      onBlur={() => setPagePreview(null)}
-                      onClick={(event) => handlePageLinkClick(event, link)}
-                      className="rounded-full px-2.5 py-1.5 text-zinc-500 transition-colors hover:text-zinc-900 data-[checked=true]:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                  {PAGE_LINKS.map((link) =>
+                    link.disabled ? (
+                      <span
+                        key={link.id}
+                        data-id={link.id}
+                        aria-disabled="true"
+                        title="Page temporarily disabled"
+                        className="pointer-events-none cursor-not-allowed rounded-full px-2.5 py-1.5 text-zinc-400 line-through decoration-zinc-400/70 dark:text-zinc-600 dark:decoration-zinc-600"
+                      >
+                        {link.label}
+                      </span>
+                    ) : (
+                      <Link
+                        key={link.id}
+                        href={link.href}
+                        data-id={link.id}
+                        onMouseEnter={(event) =>
+                          showPagePreview(event.currentTarget, link)
+                        }
+                        onFocus={(event) =>
+                          showPagePreview(event.currentTarget, link)
+                        }
+                        onBlur={() => setActivePagePreview(null)}
+                        onClick={(event) => handlePageLinkClick(event, link)}
+                        className="rounded-full px-2.5 py-1.5 text-zinc-500 transition-colors hover:text-zinc-900 data-[checked=true]:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50"
+                      >
+                        {link.label}
+                      </Link>
+                    ),
+                  )}
                 </AnimatedBackground>
               </nav>
               <AnimatedThemeToggler />

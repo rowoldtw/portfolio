@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { motion } from 'motion/react'
 import { useTheme } from '@/components/theme-provider'
-import { useUiPreferences } from '@/components/ui-preferences-provider'
 import { createAnimation } from '@/components/ui/skiper-ui/skiper26'
 
 import { cn } from '@/lib/utils'
@@ -16,7 +15,6 @@ const TRANSITION_STYLE_ID = 'theme-transition-styles'
 
 export function AnimatedThemeToggler({ className }: AnimatedThemeTogglerProps) {
   const { resolvedTheme, setTheme } = useTheme()
-  const { animationsDisabled } = useUiPreferences()
   const [isTransitioning, setIsTransitioning] = React.useState(false)
   const clipPathId = React.useId().replaceAll(':', '')
   const isDark = resolvedTheme === 'dark'
@@ -27,12 +25,7 @@ export function AnimatedThemeToggler({ className }: AnimatedThemeTogglerProps) {
       '(prefers-reduced-motion: reduce)',
     ).matches
 
-    if (
-      animationsDisabled ||
-      reduceMotion ||
-      isTransitioning ||
-      !document.startViewTransition
-    ) {
+    if (reduceMotion || isTransitioning || !document.startViewTransition) {
       switchTheme()
       return
     }
@@ -53,7 +46,7 @@ export function AnimatedThemeToggler({ className }: AnimatedThemeTogglerProps) {
 
     const transition = document.startViewTransition(switchTheme)
     void transition.finished.finally(() => setIsTransitioning(false))
-  }, [animationsDisabled, isDark, isTransitioning, setTheme])
+  }, [isDark, isTransitioning, setTheme])
 
   return (
     <button

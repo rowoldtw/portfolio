@@ -48,7 +48,6 @@ export function PagePreviewTooltip({ preview, x }: PagePreviewTooltipProps) {
                 </AnimatePresence>
               </div>
             </div>
-            <span className="absolute -bottom-1.5 left-1/2 size-2.5 -translate-x-1/2 rotate-45 border-r-2 border-b-2 border-white/80 bg-[#f4f4f4] dark:border-white/15 dark:bg-[#181818]" />
           </div>
         </motion.div>
       ) : null}
