@@ -56,7 +56,7 @@ export function AnimatedBackground({
     }
   }
 
-  return Children.map(children, (child, index) => {
+  return Children.map(children, (child) => {
     if (!isValidElement<AnimatedBackgroundChildProps>(child)) return child
 
     const id = child.props['data-id']
@@ -82,7 +82,7 @@ export function AnimatedBackground({
     return cloneElement(
       child,
       {
-        key: index,
+        key: child.key ?? id,
         className: cn('relative inline-flex', child.props.className),
         'data-checked': currentActiveId === id ? 'true' : 'false',
         ...interactionProps,
