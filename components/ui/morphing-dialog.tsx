@@ -66,7 +66,9 @@ function MorphingDialogProvider({
 
   return (
     <MorphingDialogContext.Provider value={contextValue}>
-      <MotionConfig transition={transition}>{children}</MotionConfig>
+      <MotionConfig transition={transition} reducedMotion="user">
+        {children}
+      </MotionConfig>
     </MorphingDialogContext.Provider>
   )
 }
@@ -79,7 +81,9 @@ export type MorphingDialogProps = {
 function MorphingDialog({ children, transition }: MorphingDialogProps) {
   return (
     <MorphingDialogProvider>
-      <MotionConfig transition={transition}>{children}</MotionConfig>
+      <MotionConfig transition={transition} reducedMotion="user">
+        {children}
+      </MotionConfig>
     </MorphingDialogProvider>
   )
 }
@@ -89,6 +93,7 @@ export type MorphingDialogTriggerProps = {
   className?: string
   style?: React.CSSProperties
   triggerRef?: React.RefObject<HTMLDivElement>
+  label?: string
 }
 
 function MorphingDialogTrigger({
@@ -96,8 +101,14 @@ function MorphingDialogTrigger({
   className,
   style,
   triggerRef,
+  label,
 }: MorphingDialogTriggerProps) {
-  const { setIsOpen, isOpen, uniqueId } = useMorphingDialog()
+  const {
+    setIsOpen,
+    isOpen,
+    uniqueId,
+    triggerRef: contextTriggerRef,
+  } = useMorphingDialog()
 
   const handleClick = useCallback(() => {
     setIsOpen(!isOpen)
@@ -115,7 +126,7 @@ function MorphingDialogTrigger({
 
   return (
     <motion.div
-      ref={triggerRef}
+      ref={triggerRef ?? contextTriggerRef}
       layoutId={`dialog-${uniqueId}`}
       className={cn('relative cursor-pointer', className)}
       onClick={handleClick}
@@ -126,7 +137,7 @@ function MorphingDialogTrigger({
       aria-haspopup="dialog"
       aria-expanded={isOpen}
       aria-controls={`motion-ui-morphing-dialog-content-${uniqueId}`}
-      aria-label={`Open dialog ${uniqueId}`}
+      aria-label={label ?? 'Open details'}
     >
       {children}
     </motion.div>
@@ -181,21 +192,22 @@ function MorphingDialogContent({
   }, [setIsOpen, firstFocusableElement, lastFocusableElement])
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add('overflow-hidden')
-      const focusableElements = containerRef.current?.querySelectorAll(
+    if (!isOpen) return
+    const trigger = triggerRef.current
+    const hadScrollLock = document.body.classList.contains('overflow-hidden')
+    document.body.classList.add('overflow-hidden')
+    const focusableElements =
+      containerRef.current?.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       )
-      if (focusableElements && focusableElements.length > 0) {
-        setFirstFocusableElement(focusableElements[0] as HTMLElement)
-        setLastFocusableElement(
-          focusableElements[focusableElements.length - 1] as HTMLElement,
-        )
-        ;(focusableElements[0] as HTMLElement).focus()
-      }
-    } else {
-      document.body.classList.remove('overflow-hidden')
-      triggerRef.current?.focus()
+    if (focusableElements?.length) {
+      setFirstFocusableElement(focusableElements[0])
+      setLastFocusableElement(focusableElements[focusableElements.length - 1])
+      focusableElements[0].focus({ preventScroll: true })
+    }
+    return () => {
+      if (!hadScrollLock) document.body.classList.remove('overflow-hidden')
+      trigger?.focus({ preventScroll: true })
     }
   }, [isOpen, triggerRef])
 
@@ -211,10 +223,11 @@ function MorphingDialogContent({
       layoutId={`dialog-${uniqueId}`}
       className={cn('overflow-hidden', className)}
       style={style}
+      id={`motion-ui-morphing-dialog-content-${uniqueId}`}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={`motion-ui-morphing-dialog-title-${uniqueId}`}
-      aria-describedby={`motion-ui-morphing-dialog-description-${uniqueId}`}
+      aria-labelledby={`dialog-title-${uniqueId}`}
+      aria-describedby={`dialog-description-${uniqueId}`}
     >
       {children}
     </motion.div>
@@ -244,12 +257,12 @@ function MorphingDialogContainer({ children }: MorphingDialogContainerProps) {
         <>
           <motion.div
             key={`backdrop-${uniqueId}`}
-            className="fixed inset-0 h-full w-full bg-white/40 backdrop-blur-sm dark:bg-black/40"
+            className="fixed inset-0 z-[70] h-full w-full bg-white/40 backdrop-blur-sm dark:bg-black/40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           />
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 z-[71] flex items-center justify-center p-4">
             {children}
           </div>
         </>
@@ -260,12 +273,14 @@ function MorphingDialogContainer({ children }: MorphingDialogContainerProps) {
 }
 
 export type MorphingDialogTitleProps = {
+  dialogTitle?: boolean
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
 }
 
 function MorphingDialogTitle({
+  dialogTitle,
   children,
   className,
   style,
@@ -274,6 +289,7 @@ function MorphingDialogTitle({
 
   return (
     <motion.div
+      id={dialogTitle ? `dialog-title-${uniqueId}` : undefined}
       layoutId={`dialog-title-container-${uniqueId}`}
       className={className}
       style={style}

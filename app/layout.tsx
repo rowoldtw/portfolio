@@ -3,12 +3,13 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { HomeSectionProvider } from '@/components/home-section-provider'
 import { ThemeProvider } from '@/components/theme-provider'
 import { UiPreferencesProvider } from '@/components/ui-preferences-provider'
-import { PersistentSectionNav } from '@/components/persistent-section-nav'
 import { SitePreloader } from '@/components/site-preloader'
+import { ReviewCollectionProvider } from '@/components/review-collection-provider'
 import { Footer } from './footer'
+import { CustomCursor } from '@/components/ui/custom-cursor'
+import { DitherCursor } from '@/components/ui/dither-cursor'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -64,19 +65,6 @@ const themeInitScript = `
         window.localStorage.getItem('portfolio:intro-preloader-seen') === 'true';
       document.documentElement.dataset.showIntroPreloader =
         !hasSeenIntroPreloader ? 'true' : 'false';
-      const homeSectionIds = ['home', 'projects', 'experience', 'skills', 'connect'];
-      const hashSectionId = window.location.hash.replace('#', '');
-      const storedHomeSectionId = window.sessionStorage.getItem('portfolio:home:last-section-id');
-      const initialHomeSectionId = homeSectionIds.includes(hashSectionId)
-        ? hashSectionId
-        : homeSectionIds.includes(storedHomeSectionId)
-          ? storedHomeSectionId
-          : 'home';
-      document.documentElement.dataset.initialHomeSectionId = initialHomeSectionId;
-      document.documentElement.style.setProperty(
-        '--initial-home-section-index',
-        String(homeSectionIds.indexOf(initialHomeSectionId)),
-      );
       document.documentElement.style.backgroundColor = resolvedTheme === 'dark' ? '#111' : '#fafafa';
       document.documentElement.style.colorScheme = resolvedTheme;
     } catch {}
@@ -100,17 +88,21 @@ export default function RootLayout({
         className={`${geist.variable} ${geistMono.variable} bg-background tracking-tight antialiased dark:bg-[#111]`}
       >
         <ThemeProvider>
+          <DitherCursor />
+          <CustomCursor />
           <UiPreferencesProvider>
-            <SitePreloader />
-            <HomeSectionProvider>
-              <div className="bg-background min-h-screen w-full font-(family-name:--font-inter-tight) dark:bg-[#111]">
+            <ReviewCollectionProvider>
+              <SitePreloader />
+              <div
+                data-site-content=""
+                className="bg-background min-h-screen w-full font-(family-name:--font-inter-tight) dark:bg-[#111]"
+              >
                 {children}
               </div>
-              <div>
-                <PersistentSectionNav />
+              <div data-site-content="">
                 <Footer />
               </div>
-            </HomeSectionProvider>
+            </ReviewCollectionProvider>
           </UiPreferencesProvider>
         </ThemeProvider>
         <Analytics />
