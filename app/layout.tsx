@@ -3,20 +3,17 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { HomeSectionProvider } from '@/components/home-section-provider'
 import { ThemeProvider } from '@/components/theme-provider'
 import { UiPreferencesProvider } from '@/components/ui-preferences-provider'
-import { PersistentSectionNav } from '@/components/persistent-section-nav'
 import { SitePreloader } from '@/components/site-preloader'
+import { ReviewCollectionProvider } from '@/components/review-collection-provider'
 import { Footer } from './footer'
+import { CustomCursor } from '@/components/ui/custom-cursor'
+import { DitherCursor } from '@/components/ui/dither-cursor'
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
-    { media: '(prefers-color-scheme: dark)', color: '#111' },
-  ],
 }
 
 export function generateMetadata(): Metadata {
@@ -64,21 +61,11 @@ const themeInitScript = `
         window.localStorage.getItem('portfolio:intro-preloader-seen') === 'true';
       document.documentElement.dataset.showIntroPreloader =
         !hasSeenIntroPreloader ? 'true' : 'false';
-      const homeSectionIds = ['home', 'projects', 'experience', 'skills', 'connect'];
-      const hashSectionId = window.location.hash.replace('#', '');
-      const storedHomeSectionId = window.sessionStorage.getItem('portfolio:home:last-section-id');
-      const initialHomeSectionId = homeSectionIds.includes(hashSectionId)
-        ? hashSectionId
-        : homeSectionIds.includes(storedHomeSectionId)
-          ? storedHomeSectionId
-          : 'home';
-      document.documentElement.dataset.initialHomeSectionId = initialHomeSectionId;
-      document.documentElement.style.setProperty(
-        '--initial-home-section-index',
-        String(homeSectionIds.indexOf(initialHomeSectionId)),
-      );
-      document.documentElement.style.backgroundColor = resolvedTheme === 'dark' ? '#111' : '#fafafa';
+      document.documentElement.style.backgroundColor = resolvedTheme === 'dark' ? '#080808' : '#ffffff';
       document.documentElement.style.colorScheme = resolvedTheme;
+      document.getElementById('site-theme-color')?.setAttribute(
+        'content', resolvedTheme === 'dark' ? '#080808' : '#ffffff'
+      );
     } catch {}
   })();
 `
@@ -91,26 +78,42 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta
+          id="site-theme-color"
+          name="theme-color"
+          content="#ffffff"
+          suppressHydrationWarning
+        />
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
       </head>
       <body
-        className={`${geist.variable} ${geistMono.variable} bg-background tracking-tight antialiased dark:bg-[#111]`}
+        className={`${geist.variable} ${geistMono.variable} bg-background tracking-tight antialiased`}
       >
         <ThemeProvider>
+          <div
+            aria-hidden="true"
+            className="site-frame pointer-events-none fixed inset-2.5 z-[80] rounded-[24px] shadow-[0_0_0_32px_#fff] dark:shadow-[0_0_0_32px_#080808]"
+          >
+            <div className="absolute -top-2.5 -right-2.5 -left-2.5 h-2.5 bg-white dark:bg-[#080808]" />
+          </div>
+          <DitherCursor />
+          <CustomCursor />
           <UiPreferencesProvider>
-            <SitePreloader />
-            <HomeSectionProvider>
-              <div className="bg-background min-h-screen w-full font-(family-name:--font-inter-tight) dark:bg-[#111]">
+            <ReviewCollectionProvider>
+              <SitePreloader />
+              <div
+                data-site-content=""
+                className="bg-background min-h-screen w-full font-(family-name:--font-inter-tight)"
+              >
                 {children}
               </div>
-              <div>
-                <PersistentSectionNav />
+              <div data-site-content="">
                 <Footer />
               </div>
-            </HomeSectionProvider>
+            </ReviewCollectionProvider>
           </UiPreferencesProvider>
         </ThemeProvider>
         <Analytics />
