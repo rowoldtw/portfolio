@@ -12,8 +12,6 @@ type ThemeContextValue = {
 }
 
 const THEME_STORAGE_KEY = 'theme'
-const LIGHT_BACKGROUND_COLOR = '#fafafa'
-const DARK_BACKGROUND_COLOR = '#111'
 const ThemeContext = React.createContext<ThemeContextValue | null>(null)
 
 function getSystemTheme(): ResolvedTheme {
@@ -38,8 +36,11 @@ function applyTheme(theme: Theme, resolvedTheme: ResolvedTheme) {
   document.documentElement.classList.toggle('light', resolvedTheme === 'light')
   document.documentElement.dataset.themeChoice = theme
   document.documentElement.style.backgroundColor =
-    resolvedTheme === 'dark' ? DARK_BACKGROUND_COLOR : LIGHT_BACKGROUND_COLOR
+    resolvedTheme === 'dark' ? '#080808' : '#ffffff'
   document.documentElement.style.colorScheme = resolvedTheme
+  document
+    .getElementById('site-theme-color')
+    ?.setAttribute('content', resolvedTheme === 'dark' ? '#080808' : '#ffffff')
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

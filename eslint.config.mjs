@@ -6,7 +6,7 @@ const eslintConfig = [
   ...fixupConfigRules(nextVitals),
   ...fixupConfigRules(nextTypescript),
   {
-    ignores: ['.next/**', 'out/**', 'next-env.d.ts'],
+    ignores: ['.next/**', 'out/**', 'next-env.d.ts', 'convex/_generated/**'],
   },
   {
     files: ['mdx-components.tsx'],

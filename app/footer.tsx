@@ -240,7 +240,7 @@ export function Footer({ className }: { className?: string }) {
                               className={cn(
                                 'shrink-0 rounded-full px-2.5 py-1.5 whitespace-nowrap text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] data-[checked=true]:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50',
                                 id === 'hardware' &&
-                                  'ml-2 before:absolute before:top-1/2 before:-left-1 before:h-4 before:w-px before:-translate-y-1/2 before:bg-zinc-400 dark:before:bg-zinc-500',
+                                  'ml-4 before:absolute before:top-1/2 before:-left-2 before:h-4 before:w-px before:-translate-y-1/2 before:bg-zinc-400 dark:before:bg-zinc-500',
                               )}
                             >
                               {label}

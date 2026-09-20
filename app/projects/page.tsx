@@ -32,16 +32,13 @@ const projects: ShowcaseProject[] = [
 
 export default function ProjectsPage() {
   return (
-    <main className="bg-background relative isolate flex min-h-dvh items-center px-6 py-28 sm:px-10 dark:bg-[#111]">
+    <main className="bg-background relative isolate flex min-h-dvh items-center px-6 py-28 sm:px-10 dark:bg-[#121212]">
       <section
         className="mx-auto w-full max-w-5xl"
         aria-labelledby="projects-heading"
       >
         <div className="mb-10 sm:px-8">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Selected work
-          </p>
-          <h1 id="projects-heading" className="mt-2 text-lg font-medium">
+          <h1 id="projects-heading" className="text-lg font-medium">
             Projects
           </h1>
           <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">

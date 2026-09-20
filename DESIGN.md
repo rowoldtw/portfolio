@@ -3,7 +3,7 @@ version: alpha
 name: Woodrow Rowoldt Portfolio
 description: Minimal portfolio design guidance for consistent agent contributions.
 colors:
-  background: '#fafafa'
+  background: '#F5F4F3'
   foreground: 'oklch(0.145 0 0)'
   primary: 'oklch(0.205 0 0)'
   primary-foreground: 'oklch(0.985 0 0)'
@@ -29,7 +29,7 @@ The frontmatter records the light palette. Apply the corresponding dark values t
 
 | Token | Dark value |
 | --- | --- |
-| background | `#111` |
+| background | `#121212` |
 | foreground | `oklch(0.985 0 0)` |
 | primary | `oklch(0.922 0 0)` |
 | primary-foreground | `oklch(0.205 0 0)` |
@@ -57,6 +57,8 @@ Keep layouts usable on narrow screens and with longer content. Resolve overflow 
 ## Elevation & Depth
 
 Keep depth subordinate to content and controls. Reuse existing surface and control variants before introducing a new shadow or material treatment. Scope expressive effects to the feature the user requests; a local interaction is not a reason to restyle the whole site.
+
+Non-review pages use `#F5F4F3` in light theme and `#121212` in dark theme. Reviews retain `#ffffff` / `#080808`. Review cards have no line borders; light card text surfaces use `#F5F4F3` and image surfaces use `#ffffff`. The inset page frame appears on non-review pages in both themes and is hidden on reviews. In dark theme, their text surfaces use `#121212` and cutout image surfaces use `#202020`.
 
 ## Shapes
 
