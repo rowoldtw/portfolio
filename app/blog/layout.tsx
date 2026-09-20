@@ -8,11 +8,11 @@ export default function LayoutBlogPost({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background dark:bg-[#111]">
+    <div className="flex min-h-screen w-full flex-col bg-background dark:bg-[#121212]">
       <div className="relative mx-auto w-full max-w-screen-sm flex-1 px-4 pt-20">
         <Header />
 
-        <div className="pointer-events-none fixed top-0 left-0 z-10 h-12 w-full bg-gray-100 to-transparent backdrop-blur-xl [-webkit-mask-image:linear-gradient(to_bottom,black,transparent)] dark:bg-[#111]" />
+        <div className="pointer-events-none fixed top-0 left-0 z-10 h-12 w-full bg-gray-100 to-transparent backdrop-blur-xl [-webkit-mask-image:linear-gradient(to_bottom,black,transparent)] dark:bg-[#121212]" />
         <ScrollProgress
           className="fixed top-0 z-20 h-0.5 bg-gray-300 dark:bg-zinc-600"
           springOptions={{

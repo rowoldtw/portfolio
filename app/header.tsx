@@ -4,17 +4,29 @@ import { TextLoop } from '@/components/ui/text-loop'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
-export function Header({ className }: { className?: string }) {
+export function Header({
+  className,
+  landing = false,
+}: {
+  className?: string
+  landing?: boolean
+}) {
   return (
     <header className={cn('mb-8 flex items-center justify-between', className)}>
       <div>
-        <Link
-          href="/"
-          className="group relative inline-flex font-medium text-black transition-colors hover:text-zinc-600 focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none dark:text-white dark:hover:text-zinc-300 dark:focus-visible:ring-zinc-500/60"
-        >
-          Woodrow Rowoldt
-          <span className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-zinc-500 transition-transform duration-200 group-hover:scale-x-100 dark:bg-zinc-400" />
-        </Link>
+        {landing ? (
+          <h1 className="font-medium text-black dark:text-white">
+            Woodrow Rowoldt
+          </h1>
+        ) : (
+          <Link
+            href="/"
+            className="group relative inline-flex font-medium text-black transition-colors hover:text-zinc-600 focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none dark:text-white dark:hover:text-zinc-300 dark:focus-visible:ring-zinc-500/60"
+          >
+            Woodrow Rowoldt
+            <span className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-zinc-500 transition-transform duration-200 group-hover:scale-x-100 dark:bg-zinc-400" />
+          </Link>
+        )}
         <TextEffect
           as="p"
           preset="fade"
@@ -26,7 +38,7 @@ export function Header({ className }: { className?: string }) {
         </TextEffect>
         <TextLoop
           className="mt-1 text-xs text-zinc-500 tabular-nums dark:text-zinc-600"
-          interval={4}
+          interval={landing ? 3 : 4}
           transition={{ duration: 0.25 }}
         >
           <p>Last update: Q3 2026</p>

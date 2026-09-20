@@ -23,7 +23,7 @@
   --sh-property: #73daca;
   --sh-entity: #e0af68;
   --radius: 0.625rem;
-  --background: #fafafa;
+  --background: #F5F4F3;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -98,7 +98,7 @@
 }
 
 .dark {
-  --background: #111;
+  --background: #121212;
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -260,4 +260,14 @@ body:has([data-project-preview], [data-cursor-exclude]:hover, [role='dialog'])
   .page-enter {
     animation: page-enter 320ms ease-out;
   }
+}
+
+html:has([data-reviews-page]) {
+  --background: #fff;
+}
+html.dark:has([data-reviews-page]) {
+  --background: #080808;
+}
+body:has([data-reviews-page]) .site-frame {
+  display: none;
 }

@@ -14,26 +14,16 @@ import {
   MorphingDialogImage,
 } from '@/components/ui/morphing-dialog'
 
-export type ReviewProduct = {
-  id: string
-  kind?: 'software' | 'album'
-  name: string
-  category: string
-  brand: string
-  image: string
-  alt: string
-  description: string
-  details: readonly (readonly [string, string])[]
-  url: string
-}
+export type ReviewProduct =
+  import('@/convex/_generated/dataModel').Doc<'reviews'>
 
 export function ReviewCard({ product }: { product: ReviewProduct }) {
-  const isAlbum = product.kind === 'album'
+  const isAlbum = product.collection === 'albums'
   const subtitle = isAlbum ? product.brand : product.category
   const imageClass = cn(
-    'w-full rounded-lg bg-zinc-200 dark:bg-[#1a1a1a]',
+    'w-full rounded-lg bg-white dark:bg-[#202020]',
     isAlbum ? 'aspect-square object-cover' : 'aspect-[16/9] object-contain',
-    !isAlbum && (product.kind === 'software' ? 'p-9' : 'p-5'),
+    !isAlbum && (product.collection === 'software' ? 'p-9' : 'p-5'),
   )
 
   return (
@@ -43,7 +33,7 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
       <MorphingDialogTrigger
         label={`Read about ${product.name}`}
         style={{ borderRadius: 16 }}
-        className="border border-zinc-200 bg-white p-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-4 dark:border-zinc-800 dark:bg-black"
+        className="bg-[#F5F4F3] p-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-4 dark:bg-[#121212]"
       >
         <MorphingDialogImage
           src={product.image}
@@ -65,7 +55,7 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
       <MorphingDialogContainer>
         <MorphingDialogContent
           style={{ borderRadius: 16 }}
-          className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain border border-zinc-200 bg-white p-2 text-zinc-900 dark:border-zinc-800 dark:bg-black dark:text-zinc-100"
+          className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain bg-[#F5F4F3] p-2 text-zinc-900 dark:bg-[#121212] dark:text-zinc-100"
         >
           <MorphingDialogImage
             src={product.image}
@@ -79,6 +69,9 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
             >
               {product.name}
             </MorphingDialogTitle>
+            <MorphingDialogSubtitle className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              {subtitle}
+            </MorphingDialogSubtitle>
             <MorphingDialogDescription
               disableLayoutAnimation
               variants={{
@@ -90,12 +83,13 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
                 exit: { opacity: 0, transition: { duration: 0.1 } },
               }}
             >
-              <div className="mt-5 rounded-lg bg-zinc-50 p-4 dark:bg-zinc-900">
+              <div className="mt-5 rounded-lg bg-zinc-50 p-4 dark:bg-[#202020]">
                 <h3 className="text-sm font-medium">My review</h3>
-                <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                  {isAlbum
-                    ? `Review coming soon. I’ll share my thoughts on ${product.name}, favorite tracks, and what stayed with me.`
-                    : `Review coming soon. I’ll share my experience with the ${product.name}, what stood out, and what I’d change.`}
+                <p className="mt-2 text-sm leading-6 whitespace-pre-line text-zinc-600 dark:text-zinc-400">
+                  {product.review?.trim() ||
+                    (isAlbum
+                      ? `Review coming soon. I’ll share my thoughts on ${product.name}, favorite tracks, and what stayed with me.`
+                      : `Review coming soon. I’ll share my experience with the ${product.name}, what stood out, and what I’d change.`)}
                 </p>
               </div>
               <a
