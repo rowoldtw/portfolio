@@ -96,9 +96,12 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
                 href={product.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-sm text-xs text-zinc-600 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 dark:text-zinc-400"
+                data-cursor-link-underline=""
+                className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-sm text-xs text-zinc-600 underline-offset-4 focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-4 dark:text-zinc-400"
               >
-                {isAlbum ? 'Listen' : 'Product details'}{' '}
+                <span data-cursor-link-label="">
+                  {isAlbum ? 'Listen' : 'Product details'}
+                </span>{' '}
                 <ArrowUpRight aria-hidden="true" className="size-3.5" />
                 <span className="sr-only">
                   for {product.name} (opens in a new tab)
@@ -106,7 +109,7 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
               </a>
             </MorphingDialogDescription>
           </div>
-          <MorphingDialogClose className="top-4 right-4 flex size-9 items-center justify-center rounded-full bg-white text-zinc-900 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 [&>svg]:size-4" />
+          <MorphingDialogClose className="top-4 right-4 flex size-9 items-center justify-center rounded-full bg-white text-zinc-900 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 dark:bg-[#202020] dark:text-zinc-100 [&>svg]:size-4" />
         </MorphingDialogContent>
       </MorphingDialogContainer>
     </MorphingDialog>
