@@ -181,10 +181,12 @@ export function Footer({ className }: { className?: string }) {
       <LayoutGroup>
         <motion.div
           layoutRoot
-          className="pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 flex justify-center pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))]"
+          data-site-navbar-root=""
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))]"
         >
           <div
             data-cursor-exclude=""
+            data-site-navbar-shell=""
             className="pointer-events-auto relative w-fit max-w-full"
           >
             <CommandMenu
@@ -193,9 +195,10 @@ export function Footer({ className }: { className?: string }) {
             />
             <motion.footer
               layout
+              data-site-navbar=""
               style={{ borderRadius: 32 }}
               className={cn(
-                'pointer-events-auto max-w-full rounded-[2rem] border border-white/70 bg-[#f4f4f4]/50 p-2 backdrop-blur-xl dark:border-white/10 dark:bg-[#181818]/75',
+                'pointer-events-auto max-w-full rounded-[2rem] bg-[#f4f4f4]/50 p-2 backdrop-blur-xl dark:bg-[#181818]/75',
                 className,
               )}
             >
@@ -210,13 +213,15 @@ export function Footer({ className }: { className?: string }) {
                   onMouseLeave={schedulePagePreviewClose}
                   className="scrollbar-hidden relative flex min-w-0 items-center overflow-x-auto rounded-full bg-black/[0.035] p-0.5 sm:overflow-visible dark:bg-white/[0.06]"
                 >
-                  <PagePreviewTooltip
-                    preview={pagePreview}
-                    x={pagePreviewX}
-                    onMouseEnter={cancelPagePreviewClose}
-                    onMouseLeave={schedulePagePreviewClose}
-                    onReviewSelect={setCollection}
-                  />
+                  {!reviewsExpanded && (
+                    <PagePreviewTooltip
+                      preview={pagePreview}
+                      x={pagePreviewX}
+                      onMouseEnter={cancelPagePreviewClose}
+                      onMouseLeave={schedulePagePreviewClose}
+                      onReviewSelect={setCollection}
+                    />
+                  )}
                   <AnimatedBackground
                     value={activeItemId}
                     className="rounded-full bg-white shadow-sm dark:bg-zinc-950"
