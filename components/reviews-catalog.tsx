@@ -1,11 +1,16 @@
 'use client'
 
+import { useMemo } from 'react'
 import type { FunctionReturnType } from 'convex/server'
 import type { ReviewCollection } from '@/components/review-collection-provider'
 import { usePaginatedQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { ReviewCard } from '@/components/review-card'
 import { useReviewCollection } from '@/components/review-collection-provider'
+import {
+  ProximitySidebar,
+  type ProximitySection,
+} from '@/components/ui/proximity-sidebar'
 
 export function ReviewsCatalog({
   initialPages,
@@ -34,24 +39,45 @@ export function ReviewsCatalog({
         ? 'Exhausted'
         : 'CanLoadMore'
       : liveStatus
-  const sections =
-    collection === 'hardware'
-      ? [
-          {
-            title: 'Hardware',
-            items: results.filter((product) => !product.accessory),
-          },
-          {
-            title: 'Accessories',
-            items: results.filter((product) => product.accessory),
-          },
-        ]
-      : [
-          {
-            title: collection === 'software' ? 'Software' : 'Albums',
-            items: results,
-          },
-        ]
+  const sections = useMemo(
+    () =>
+      collection === 'hardware'
+        ? [
+            {
+              title: 'Hardware',
+              items: results.filter((product) => !product.accessory),
+            },
+            {
+              title: 'Accessories',
+              items: results.filter((product) => product.accessory),
+            },
+          ]
+        : [
+            {
+              title: collection === 'software' ? 'Software' : 'Albums',
+              items: results,
+            },
+          ],
+    [collection, results],
+  )
+  const proximitySections = useMemo<ProximitySection[]>(
+    () => [
+      { id: 'reviews-top', label: 'Reviews', kind: 'title' },
+      ...sections.flatMap(({ title, items }, index) => [
+        {
+          id: `review-section-${index}`,
+          label: title,
+          kind: 'subtitle' as const,
+        },
+        ...items.map((product) => ({
+          id: `review-${product._id}`,
+          label: product.name,
+          kind: 'body' as const,
+        })),
+      ]),
+    ],
+    [sections],
+  )
   const countLabel = {
     hardware: 'products',
     software: 'apps',
@@ -63,9 +89,18 @@ export function ReviewsCatalog({
       data-reviews-page=""
       className="bg-background min-h-dvh px-5 pt-20 pb-44 sm:px-10 sm:pt-28 dark:bg-[#080808]"
     >
+      <div aria-hidden="true" data-review-scroll-fade="" />
+      <ProximitySidebar
+        sections={proximitySections}
+        side="right"
+        className="fixed top-1/2 right-0 z-30 hidden h-[min(70dvh,36rem)] -translate-y-1/2 xl:flex"
+      />
       <div className="mx-auto w-full max-w-5xl">
         <header className="mb-10 flex flex-wrap items-end justify-between gap-5">
-          <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
+          <h1
+            id="reviews-top"
+            className="scroll-mt-28 text-3xl font-medium tracking-tight sm:text-4xl"
+          >
             Reviews
           </h1>
         </header>
@@ -78,8 +113,9 @@ export function ReviewsCatalog({
             .map(({ title, items }, index) => (
               <section
                 key={title}
+                id={`review-section-${index}`}
                 aria-label={title}
-                className="mt-10 first:mt-0"
+                className="mt-10 scroll-mt-28 first:mt-0"
               >
                 <div className="mb-4 flex items-baseline gap-3">
                   <h2 className="text-sm font-medium">{title}</h2>
@@ -97,7 +133,13 @@ export function ReviewsCatalog({
                   className="relative z-40 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3"
                 >
                   {items.map((product) => (
-                    <ReviewCard key={product._id} product={product} />
+                    <div
+                      key={product._id}
+                      id={`review-${product._id}`}
+                      className="scroll-mt-28"
+                    >
+                      <ReviewCard product={product} />
+                    </div>
                   ))}
                 </div>
               </section>

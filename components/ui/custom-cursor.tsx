@@ -16,7 +16,6 @@ export function CustomCursor() {
 function Cursor({ pathname }: { pathname: string }) {
   const refreshRef = useRef<(() => void) | null>(null)
   const positionRef = useRef<HTMLDivElement>(null)
-  const discRef = useRef<HTMLSpanElement>(null)
   const stackRef = useRef<HTMLDivElement>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
   const reducedMotion = usePrefersReducedMotion()
@@ -25,25 +24,20 @@ function Cursor({ pathname }: { pathname: string }) {
   useEffect(() => {
     const position = positionRef.current
     if (!position || window.self !== window.top) return
+
     const pointer = window.matchMedia('(hover: hover) and (pointer: fine)')
-    const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
-    let spin: Animation | undefined
     let currentRow: Element | null = null
     let currentGroup: Element | null = null
     let images: string[] = []
     let x = 0
     let y = 0
+
     const select = (target: Element | null) => {
       const control = target?.closest(
         'a[href], button, summary, input, textarea, select, label, [role="button"], [role="link"], [role="option"], [contenteditable="true"]',
       )
-      const text = target?.closest(
-        'p, h1, h2, h3, h4, h5, h6, li, blockquote, code, span',
-      )
       const disabled = target?.closest(':disabled, [aria-disabled="true"]')
-      const selectable =
-        !disabled &&
-        (control || (text && getComputedStyle(text).userSelect !== 'none'))
+      const selectable = !disabled && Boolean(control)
       position.dataset.cursorSelectable = selectable ? 'true' : 'false'
 
       const row = target?.closest('[data-project-cursor]') ?? null
@@ -66,6 +60,7 @@ function Cursor({ pathname }: { pathname: string }) {
         index: Number(row.getAttribute('data-project-cursor')),
       })
     }
+
     const release = () => {
       delete position.dataset.cursorPressed
     }
@@ -73,18 +68,10 @@ function Cursor({ pathname }: { pathname: string }) {
       move(event)
       if (pointer.matches && event.pointerType === 'mouse') {
         position.dataset.cursorPressed = 'true'
-        if (!motion.matches && !currentRow) {
-          spin?.cancel()
-          spin = discRef.current?.animate(
-            [{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }],
-            { duration: 420, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
-          )
-        }
       }
     }
     const hide = () => {
       release()
-      spin?.cancel()
       position.style.visibility = 'hidden'
       delete document.documentElement.dataset.customCursor
       currentRow = null
@@ -106,9 +93,11 @@ function Cursor({ pathname }: { pathname: string }) {
       if (event.key === 'Tab' || event.key === 'Escape') hide()
     }
     const scroll = () => {
-      if (document.documentElement.dataset.customCursor)
+      if (document.documentElement.dataset.customCursor) {
         select(document.elementFromPoint(x, y))
+      }
     }
+
     refreshRef.current = scroll
     window.addEventListener('pointerdown', press)
     window.addEventListener('pointerup', release)
@@ -120,8 +109,8 @@ function Cursor({ pathname }: { pathname: string }) {
     window.addEventListener('keydown', key)
     window.addEventListener('scroll', scroll, true)
     pointer.addEventListener('change', hide)
+
     return () => {
-      spin?.cancel()
       refreshRef.current = null
       window.removeEventListener('pointerdown', press)
       window.removeEventListener('pointerup', release)
@@ -166,7 +155,7 @@ function Cursor({ pathname }: { pathname: string }) {
       <div
         data-project-preview={active ? '' : undefined}
         data-cursor-shape={active ? 'preview' : 'circle'}
-        className="relative -translate-x-1/2 -translate-y-1/2 overflow-hidden [[data-cursor-pressed=true]_&[data-cursor-shape=circle]]:scale-[0.7] [[data-cursor-pressed=true]_&[data-cursor-shape=circle]]:[--cursor-scale-duration:100ms] [[data-cursor-selectable=true]:not([data-cursor-pressed=true])_&[data-cursor-shape=circle]]:scale-[1.45]"
+        className="relative -translate-x-1/2 -translate-y-1/2 overflow-hidden [[data-cursor-pressed=true]_&]:scale-[0.88] [[data-cursor-pressed=true]_&]:[--cursor-scale-duration:100ms] [[data-cursor-selectable=true]:not([data-cursor-pressed=true])_&[data-cursor-shape=circle]]:scale-[1.45] [[data-cursor-selectable=true][data-cursor-pressed=true]_&[data-cursor-shape=circle]]:scale-[1.15]"
         style={{
           width: active ? 400 : 14,
           height: active ? 250 : 14,
@@ -177,8 +166,7 @@ function Cursor({ pathname }: { pathname: string }) {
         }}
       >
         <span
-          ref={discRef}
-          className="absolute inset-0 rounded-full bg-[linear-gradient(135deg,#000_50%,#fff_50%)] dark:bg-[linear-gradient(135deg,#fff_50%,#000_50%)]"
+          className="absolute inset-0 rounded-full bg-black dark:bg-white"
           style={{ opacity: active ? 0 : 1 }}
         />
         {preview && (
