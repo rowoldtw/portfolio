@@ -18,6 +18,7 @@ function Cursor({ pathname }: { pathname: string }) {
   const positionRef = useRef<HTMLDivElement>(null)
   const stackRef = useRef<HTMLDivElement>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
+  const [linkWidth, setLinkWidth] = useState<number | null>(null)
   const reducedMotion = usePrefersReducedMotion()
   const active = preview?.active ?? false
 
@@ -26,6 +27,7 @@ function Cursor({ pathname }: { pathname: string }) {
     if (!position || window.self !== window.top) return
 
     const pointer = window.matchMedia('(hover: hover) and (pointer: fine)')
+    let currentLink: HTMLAnchorElement | null = null
     let currentRow: Element | null = null
     let currentGroup: Element | null = null
     let images: string[] = []
@@ -33,12 +35,41 @@ function Cursor({ pathname }: { pathname: string }) {
     let y = 0
 
     const select = (target: Element | null) => {
+      const disabled = target?.closest(':disabled, [aria-disabled="true"]')
       const control = target?.closest(
         'a[href], button, summary, input, textarea, select, label, [role="button"], [role="link"], [role="option"], [contenteditable="true"]',
       )
-      const disabled = target?.closest(':disabled, [aria-disabled="true"]')
       const selectable = !disabled && Boolean(control)
       position.dataset.cursorSelectable = selectable ? 'true' : 'false'
+
+      const underlineScope = target?.closest('[data-cursor-link-underline]')
+      const anchor = underlineScope && !disabled
+        ? target?.closest<HTMLAnchorElement>('a[href]')
+        : null
+      const link = anchor?.textContent?.trim() ? anchor : null
+
+      if (link && link !== currentLink) {
+        currentLink = link
+        position.dataset.cursorLink = 'true'
+        const label = link.querySelector<HTMLElement>(
+          '[data-cursor-link-label]',
+        )
+        const linkRect = link.getBoundingClientRect()
+        const labelRect = label?.getBoundingClientRect() ?? linkRect
+        const width = Math.max(12, labelRect.width)
+        const centerX = labelRect.left + labelRect.width / 2
+        const bottom = labelRect.bottom
+
+        position.style.transform = `translate3d(${centerX}px, ${bottom + 2}px, 0)`
+        setLinkWidth((current) =>
+          current === width ? current : Math.round(width * 100) / 100,
+        )
+      } else if (!link) {
+        currentLink = null
+        delete position.dataset.cursorLink
+        position.style.transform = `translate3d(${x}px, ${y}px, 0)`
+        setLinkWidth(null)
+      }
 
       const row = target?.closest('[data-project-cursor]') ?? null
       if (row === currentRow) return
@@ -74,7 +105,10 @@ function Cursor({ pathname }: { pathname: string }) {
       release()
       position.style.visibility = 'hidden'
       delete document.documentElement.dataset.customCursor
+      delete position.dataset.cursorLink
+      currentLink = null
       currentRow = null
+      setLinkWidth(null)
       setPreview((current) => (current ? { ...current, active: false } : null))
     }
     const move = (event: PointerEvent) => {
@@ -84,7 +118,6 @@ function Cursor({ pathname }: { pathname: string }) {
       }
       x = event.clientX
       y = event.clientY
-      position.style.transform = `translate3d(${x}px, ${y}px, 0)`
       position.style.visibility = 'visible'
       document.documentElement.dataset.customCursor = 'true'
       select(event.target instanceof Element ? event.target : null)
@@ -94,6 +127,7 @@ function Cursor({ pathname }: { pathname: string }) {
     }
     const scroll = () => {
       if (document.documentElement.dataset.customCursor) {
+        currentLink = null
         select(document.elementFromPoint(x, y))
       }
     }
@@ -150,16 +184,18 @@ function Cursor({ pathname }: { pathname: string }) {
       ref={positionRef}
       aria-hidden="true"
       data-custom-cursor-position=""
-      className="pointer-events-none invisible fixed top-0 left-0 z-[100]"
+      className="pointer-events-none invisible fixed top-0 left-0 z-[100] data-[cursor-link=true]:transition-transform data-[cursor-link=true]:duration-200 data-[cursor-link=true]:ease-out motion-reduce:transition-none"
     >
       <div
         data-project-preview={active ? '' : undefined}
-        data-cursor-shape={active ? 'preview' : 'circle'}
+        data-cursor-shape={
+          active ? 'preview' : linkWidth ? 'underline' : 'circle'
+        }
         className="relative -translate-x-1/2 -translate-y-1/2 overflow-hidden [[data-cursor-pressed=true]_&]:scale-[0.88] [[data-cursor-pressed=true]_&]:[--cursor-scale-duration:100ms] [[data-cursor-selectable=true]:not([data-cursor-pressed=true])_&[data-cursor-shape=circle]]:scale-[1.45] [[data-cursor-selectable=true][data-cursor-pressed=true]_&[data-cursor-shape=circle]]:scale-[1.15]"
         style={{
-          width: active ? 400 : 14,
-          height: active ? 250 : 14,
-          borderRadius: active ? 12 : 7,
+          width: active ? 400 : (linkWidth ?? 14),
+          height: active ? 250 : linkWidth ? 2 : 14,
+          borderRadius: active ? 12 : linkWidth ? 1 : 7,
           transition: reducedMotion
             ? 'none'
             : 'width 240ms ease, height 240ms ease, border-radius 240ms ease, scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)',

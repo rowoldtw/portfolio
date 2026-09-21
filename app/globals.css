@@ -278,6 +278,76 @@ body:has([data-reviews-page]) .site-frame {
   display: none;
 }
 
+[data-site-navbar-shell] {
+  --site-navbar-frame: #fff;
+  border-radius: 2.125rem 2.125rem 0 0;
+  background: var(--site-navbar-frame);
+  padding: 0.125rem 0.125rem max(0.25rem, env(safe-area-inset-bottom));
+}
+
+html.dark [data-site-navbar-shell] {
+  --site-navbar-frame: #080808;
+}
+
+[data-site-navbar-shell]::before,
+[data-site-navbar-shell]::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  bottom: 0.625rem;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+[data-site-navbar-shell]::before {
+  right: 100%;
+  background: radial-gradient(
+    circle at top left,
+    transparent 0.8125rem,
+    var(--site-navbar-frame) 0.875rem
+  );
+}
+
+[data-site-navbar-shell]::after {
+  left: 100%;
+  background: radial-gradient(
+    circle at top right,
+    transparent 0.8125rem,
+    var(--site-navbar-frame) 0.875rem
+  );
+}
+
+[data-site-navbar] {
+  background: #fff;
+}
+
+html.dark [data-site-navbar] {
+  background: #080808;
+}
+
+body:has([data-reviews-page]) [data-site-navbar-root] {
+  bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+body:has([data-reviews-page]) [data-site-navbar-shell] {
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+body:has([data-reviews-page]) [data-site-navbar-shell]::before,
+body:has([data-reviews-page]) [data-site-navbar-shell]::after {
+  content: none;
+}
+
+body:has([data-reviews-page]) [data-site-navbar] {
+  background: rgb(244 244 244 / 50%);
+}
+
+html.dark body:has([data-reviews-page]) [data-site-navbar] {
+  background: rgb(24 24 24 / 75%);
+}
+
 html:has([data-landing-page]),
 body:has([data-landing-page]) {
   overscroll-behavior-y: none;
@@ -296,7 +366,7 @@ body:has([data-landing-page]) {
   position: absolute;
   right: 0;
   left: 0;
-  height: 4rem;
+  height: 2.5rem;
 }
 
 [data-review-scroll-fade]::before {
@@ -307,6 +377,7 @@ body:has([data-landing-page]) {
 
 [data-review-scroll-fade]::after {
   bottom: 0;
+  opacity: 0.65;
   background: linear-gradient(to top, var(--background), transparent);
 }
 
@@ -328,13 +399,13 @@ body:has([data-landing-page]) {
       opacity: 0;
     }
     to {
-      opacity: 1;
+      opacity: 0.65;
     }
   }
 
   @keyframes review-fade-bottom {
     from {
-      opacity: 1;
+      opacity: 0.65;
     }
     to {
       opacity: 0;
