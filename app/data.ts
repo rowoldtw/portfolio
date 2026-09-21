@@ -112,7 +112,7 @@ export const SOCIAL_LINKS: SocialLink[] = [
     link: 'https://github.com/rowoldtw',
   },
   {
-    label: 'X',
+    label: 'Twitter',
     link: 'https://x.com/wdsywrld',
   },
   {
@@ -124,8 +124,8 @@ export const SOCIAL_LINKS: SocialLink[] = [
     link: 'https://www.instagram.com/whoodsy',
   },
   {
-    label: 'LeetCode',
-    link: 'https://leetcode.com/u/rowoldtw/',
+    label: 'Cal.com',
+    link: 'https://cal.com',
   },
 ]
 

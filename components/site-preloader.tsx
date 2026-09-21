@@ -92,7 +92,7 @@ function WordsPreloader({ onComplete }: { onComplete: () => void }) {
     <motion.div
       data-site-preloader=""
       data-cursor-exclude=""
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-100"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-white text-zinc-950 dark:bg-[#080808] dark:text-zinc-100"
       initial={false}
       variants={{
         enter: { opacity: 1, y: 0 },
@@ -124,7 +124,7 @@ function WordsPreloader({ onComplete }: { onComplete: () => void }) {
           aria-hidden="true"
           viewBox="0 0 1000 200"
           preserveAspectRatio="none"
-          className="pointer-events-none absolute top-[calc(100%-1px)] left-0 h-[200px] w-full fill-zinc-100 dark:fill-zinc-950"
+          className="pointer-events-none absolute top-[calc(100%-1px)] left-0 h-[200px] w-full fill-white dark:fill-[#080808]"
         >
           <motion.path
             initial={false}

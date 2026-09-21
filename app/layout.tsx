@@ -9,7 +9,6 @@ import { SitePreloader } from '@/components/site-preloader'
 import { ReviewCollectionProvider } from '@/components/review-collection-provider'
 import { Footer } from './footer'
 import { CustomCursor } from '@/components/ui/custom-cursor'
-import { DitherCursor } from '@/components/ui/dither-cursor'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -99,7 +98,6 @@ export default function RootLayout({
           >
             <div className="absolute -top-2.5 -right-2.5 -left-2.5 h-2.5 bg-white dark:bg-[#080808]" />
           </div>
-          <DitherCursor />
           <CustomCursor />
           <UiPreferencesProvider>
             <ReviewCollectionProvider>

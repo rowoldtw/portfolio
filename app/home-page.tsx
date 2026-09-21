@@ -1,17 +1,17 @@
 import Link from 'next/link'
-import { Header } from './header'
+import { LandingHeader } from '@/components/landing-header'
 import { SOCIAL_LINKS } from './data'
 
 export default function HomePage() {
   return (
-    <div className="bg-white dark:bg-[#080808]">
-      <main className="bg-background relative z-10 mx-2.5 min-h-dvh rounded-b-[24px]">
+    <div data-landing-page="" className="bg-white dark:bg-[#080808]">
+      <main className="bg-background relative z-10 mx-2.5 min-h-dvh overflow-hidden rounded-b-[24px]">
         <section
           id="home"
           data-section="home"
-          className="mx-auto flex min-h-dvh w-full max-w-screen-sm flex-col items-center justify-center px-4 py-20 text-left"
+          className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden px-4 py-20 text-left"
         >
-          <Header className="mb-0" landing />
+          <LandingHeader />
         </section>
       </main>
       <footer
@@ -33,6 +33,14 @@ export default function HomePage() {
             <Link href="/reviews" className="hover:underline">
               Reviews
             </Link>
+            <span
+              role="link"
+              aria-disabled="true"
+              className="cursor-not-allowed text-zinc-400 dark:text-zinc-600"
+            >
+              Download resume
+              <span className="sr-only"> (unavailable)</span>
+            </span>
           </nav>
           <nav
             aria-label="Social links"
@@ -52,9 +60,6 @@ export default function HomePage() {
             ))}
           </nav>
         </div>
-        <p className="text-[clamp(2rem,8vw,7rem)] leading-none font-medium">
-          Woodrow Rowoldt
-        </p>
       </footer>
     </div>
   )
