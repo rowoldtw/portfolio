@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useSyncExternalStore } from 'react'
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { motion } from 'motion/react'
+import { useTheme } from '@/components/theme-provider'
 
 const REVIEW_PREVIEWS = [
   { id: 'hardware', label: 'Hardware' },
@@ -192,13 +193,29 @@ function ReviewPreviewStack({
 }
 
 function PreviewFrame({ href, label }: { href: string; label: string }) {
+  const { resolvedTheme } = useTheme()
+  const frameRef = useRef<HTMLIFrameElement>(null)
+
+  const syncFrameTheme = () => {
+    const root = frameRef.current?.contentDocument?.documentElement
+    if (!root) return
+
+    root.classList.toggle('dark', resolvedTheme === 'dark')
+    root.classList.toggle('light', resolvedTheme === 'light')
+    root.style.colorScheme = resolvedTheme
+  }
+
+  useLayoutEffect(syncFrameTheme, [resolvedTheme])
+
   return (
     <div className="relative aspect-video overflow-hidden rounded-lg bg-[#fafafa] dark:bg-[#111]">
       <iframe
+        ref={frameRef}
         src={href}
         title={`${label} page preview`}
         tabIndex={-1}
         loading="eager"
+        onLoad={syncFrameTheme}
         className="pointer-events-none h-[720px] w-[1280px] origin-top-left scale-[0.15625] border-0"
       />
     </div>

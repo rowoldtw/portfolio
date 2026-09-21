@@ -17,6 +17,7 @@ export default function HomePage() {
       <footer
         aria-label="Landing footer"
         data-cursor-exclude=""
+        data-cursor-link-underline=""
         className="sticky bottom-0 z-0 flex h-96 flex-col justify-between overflow-hidden bg-[#fff] px-6 pt-10 pb-24 text-zinc-900 sm:px-12 dark:bg-[#080808] dark:text-zinc-100"
       >
         <div className="flex justify-end gap-12 text-sm sm:gap-20">
@@ -24,21 +25,21 @@ export default function HomePage() {
             aria-label="Footer pages"
             className="flex flex-col items-end gap-2"
           >
-            <Link href="/" className="hover:underline">
-              Home
+            <Link href="/" className="focus-visible:underline">
+              <span data-cursor-link-label="">Home</span>
             </Link>
-            <Link href="/projects" className="hover:underline">
-              Projects
+            <Link href="/projects" className="focus-visible:underline">
+              <span data-cursor-link-label="">Projects</span>
             </Link>
-            <Link href="/reviews" className="hover:underline">
-              Reviews
+            <Link href="/reviews" className="focus-visible:underline">
+              <span data-cursor-link-label="">Reviews</span>
             </Link>
             <span
               role="link"
               aria-disabled="true"
               className="cursor-not-allowed text-zinc-400 dark:text-zinc-600"
             >
-              Download resume
+              Resume
               <span className="sr-only"> (unavailable)</span>
             </span>
           </nav>
@@ -52,9 +53,9 @@ export default function HomePage() {
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:underline"
+                className="focus-visible:underline"
               >
-                {label}
+                <span data-cursor-link-label="">{label}</span>
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>
             ))}
