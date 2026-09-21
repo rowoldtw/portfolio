@@ -12,7 +12,7 @@ Convex writes `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL` to the ignored `.
 
 ## Existing content
 
-Run `pnpm exec convex run seed:reviews` once per deployment. It imports the 39 catalog items from `seedData.ts`. Running it again skips existing slugs and does not overwrite review text or other edits. The seed is migration data, not a frontend fallback; update Convex for ongoing changes.
+Run `pnpm exec convex run seed:reviews` once per deployment. It imports the 54 catalog items from `seedData.ts`. Running it again skips existing slugs and does not overwrite review text or other edits. The seed is migration data, not a frontend fallback; update Convex for ongoing changes.
 
 ## Add or edit a review
 

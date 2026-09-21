@@ -59,9 +59,26 @@ export function Footer({ className }: { className?: string }) {
     useState<ActivePagePreview | null>(null)
   const [pagePreviewX, setPagePreviewX] = useState(0)
   const pagesNavRef = useRef<HTMLElement | null>(null)
+  const pagePreviewCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  )
   const prefersReducedMotion = usePrefersReducedMotion()
   const pagePreview =
     activePagePreview?.pathname === pathname ? activePagePreview.preview : null
+
+  const cancelPagePreviewClose = useCallback(() => {
+    if (!pagePreviewCloseTimerRef.current) return
+    clearTimeout(pagePreviewCloseTimerRef.current)
+    pagePreviewCloseTimerRef.current = null
+  }, [])
+
+  const schedulePagePreviewClose = useCallback(() => {
+    cancelPagePreviewClose()
+    pagePreviewCloseTimerRef.current = setTimeout(() => {
+      setActivePagePreview(null)
+      pagePreviewCloseTimerRef.current = null
+    }, 220)
+  }, [cancelPagePreviewClose])
 
   useLayoutEffect(() => {
     const nav = pagesNavRef.current
@@ -87,6 +104,7 @@ export function Footer({ className }: { className?: string }) {
 
   const showPagePreview = useCallback(
     (target: HTMLAnchorElement, preview: PagePreview) => {
+      cancelPagePreviewClose()
       const navRect = pagesNavRef.current?.getBoundingClientRect()
       if (!navRect) return
 
@@ -94,10 +112,11 @@ export function Footer({ className }: { className?: string }) {
       setPagePreviewX(targetRect.left - navRect.left + targetRect.width / 2)
       setActivePagePreview({ pathname, preview })
     },
-    [pathname],
+    [cancelPagePreviewClose, pathname],
   )
 
   const clearPagePreviewSelection = useCallback(() => {
+    cancelPagePreviewClose()
     setActivePagePreview(null)
 
     const activeElement = document.activeElement
@@ -107,7 +126,7 @@ export function Footer({ className }: { className?: string }) {
     ) {
       activeElement.blur()
     }
-  }, [])
+  }, [cancelPagePreviewClose])
 
   useEffect(() => {
     window.addEventListener('blur', clearPagePreviewSelection)
@@ -117,6 +136,7 @@ export function Footer({ className }: { className?: string }) {
     document.addEventListener('visibilitychange', clearPagePreviewSelection)
 
     return () => {
+      cancelPagePreviewClose()
       window.removeEventListener('blur', clearPagePreviewSelection)
       window.removeEventListener('focus', clearPagePreviewSelection)
       window.removeEventListener('pagehide', clearPagePreviewSelection)
@@ -126,7 +146,7 @@ export function Footer({ className }: { className?: string }) {
         clearPagePreviewSelection,
       )
     }
-  }, [clearPagePreviewSelection])
+  }, [cancelPagePreviewClose, clearPagePreviewSelection])
 
   const handlePageLinkClick = (
     event: MouseEvent<HTMLAnchorElement>,
@@ -186,10 +206,17 @@ export function Footer({ className }: { className?: string }) {
                   layoutDependency={reviewsExpanded}
                   ref={pagesNavRef}
                   aria-label="Pages"
-                  onMouseLeave={() => setActivePagePreview(null)}
+                  onMouseEnter={cancelPagePreviewClose}
+                  onMouseLeave={schedulePagePreviewClose}
                   className="scrollbar-hidden relative flex min-w-0 items-center overflow-x-auto rounded-full bg-black/[0.035] p-0.5 sm:overflow-visible dark:bg-white/[0.06]"
                 >
-                  <PagePreviewTooltip preview={pagePreview} x={pagePreviewX} />
+                  <PagePreviewTooltip
+                    preview={pagePreview}
+                    x={pagePreviewX}
+                    onMouseEnter={cancelPagePreviewClose}
+                    onMouseLeave={schedulePagePreviewClose}
+                    onReviewSelect={setCollection}
+                  />
                   <AnimatedBackground
                     value={activeItemId}
                     className="rounded-full bg-white shadow-sm dark:bg-zinc-950"
@@ -217,7 +244,7 @@ export function Footer({ className }: { className?: string }) {
                           onFocus={(event) =>
                             showPagePreview(event.currentTarget, link)
                           }
-                          onBlur={() => setActivePagePreview(null)}
+                          onBlur={schedulePagePreviewClose}
                           onClick={(event) => handlePageLinkClick(event, link)}
                           className="shrink-0 rounded-full px-2.5 py-1.5 whitespace-nowrap text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] data-[checked=true]:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50"
                         >
