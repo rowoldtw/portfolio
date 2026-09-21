@@ -23,7 +23,7 @@
   --sh-property: #73daca;
   --sh-entity: #e0af68;
   --radius: 0.625rem;
-  --background: #F5F4F3;
+  --background: #f5f4f3;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -148,6 +148,17 @@
     @apply bg-background text-foreground;
   }
 
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+
   html:not([data-show-intro-preloader='true']) [data-site-preloader] {
     display: none;
   }
@@ -235,11 +246,6 @@
   }
 }
 
-body:has([data-project-preview], [data-cursor-exclude]:hover, [role='dialog'])
-  [data-dither-cursor] {
-  visibility: hidden;
-}
-
 @media (hover: hover) and (pointer: fine) {
   html[data-custom-cursor='true'],
   html[data-custom-cursor='true'] * {
@@ -270,4 +276,68 @@ html.dark:has([data-reviews-page]) {
 }
 body:has([data-reviews-page]) .site-frame {
   display: none;
+}
+
+html:has([data-landing-page]),
+body:has([data-landing-page]) {
+  overscroll-behavior-y: none;
+}
+
+[data-review-scroll-fade] {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+}
+
+[data-review-scroll-fade]::before,
+[data-review-scroll-fade]::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 4rem;
+}
+
+[data-review-scroll-fade]::before {
+  top: 0;
+  opacity: 0;
+  background: linear-gradient(to bottom, var(--background), transparent);
+}
+
+[data-review-scroll-fade]::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--background), transparent);
+}
+
+@supports (animation-timeline: scroll()) {
+  [data-review-scroll-fade]::before {
+    animation: review-fade-top 1ms linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0% 12%;
+  }
+
+  [data-review-scroll-fade]::after {
+    animation: review-fade-bottom 1ms linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 88% 100%;
+  }
+
+  @keyframes review-fade-top {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes review-fade-bottom {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
 }

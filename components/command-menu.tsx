@@ -3,8 +3,6 @@
 import * as React from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutGrid,
-  Palette,
   BriefcaseBusiness,
   PanelsTopLeft,
   Monitor,
@@ -12,16 +10,11 @@ import {
   Play,
   Sun,
   Star,
-  Sparkles,
 } from 'lucide-react'
-import {
-  setCursorTrailEnabled,
-  useCursorTrailEnabled,
-} from '@/hooks/use-cursor-trail'
 import { PRELOADER_REPLAY_EVENT } from '@/components/site-preloader'
 import { useTheme } from '@/components/theme-provider'
 import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
-import { AppleSpotlight } from '@/components/ui/apple-spotlight'
+import { SkiperCommandMenu } from '@/components/ui/skiper-command-menu'
 
 const PAGE_COMMANDS = [
   {
@@ -52,7 +45,6 @@ type CommandMenuProps = {
 export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const cursorTrailEnabled = useCursorTrailEnabled()
   const { setTheme } = useTheme()
   const prefersReducedMotion = usePrefersReducedMotion()
 
@@ -101,6 +93,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
     ...PAGE_COMMANDS.map((item) => ({
       id: item.href,
       label: item.label,
+      group: 'Pages',
       description: item.disabled ? 'Page · Coming soon' : 'Open page',
       icon: <item.icon />,
       disabled: item.disabled,
@@ -115,23 +108,15 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
     ).map((item) => ({
       id: item.theme,
       label: `Use ${item.theme} theme`,
+      group: 'Appearance',
       description: 'Appearance',
       icon: <item.icon />,
       onSelect: () => runCommand(() => setTheme(item.theme)),
     })),
     {
-      id: 'cursor-trail',
-      label: cursorTrailEnabled
-        ? 'Disable cursor trail'
-        : 'Enable cursor trail',
-      description: 'Appearance · Theme effects',
-      icon: <Sparkles />,
-      onSelect: () =>
-        runCommand(() => setCursorTrailEnabled(!cursorTrailEnabled)),
-    },
-    {
       id: 'replay',
       label: 'Replay preloader',
+      group: 'Actions',
       description: 'Replay intro animation',
       icon: <Play />,
       onSelect: () => runCommand(replayPreloader),
@@ -139,19 +124,10 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
   ]
 
   return (
-    <AppleSpotlight
+    <SkiperCommandMenu
       open={open}
       onOpenChange={onOpenChange}
       commands={commands}
-      shortcuts={[
-        { label: 'Pages', icon: <LayoutGrid />, search: 'page' },
-        { label: 'Appearance', icon: <Palette />, search: 'theme' },
-        {
-          label: 'Replay intro',
-          icon: <Play />,
-          onSelect: () => runCommand(replayPreloader),
-        },
-      ]}
     />
   )
 }
