@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import Image from 'next/image'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { useTheme } from '@/components/theme-provider'
 
@@ -30,14 +31,6 @@ type PagePreviewTooltipProps = {
   onReviewSelect?: (collection: (typeof REVIEW_PREVIEWS)[number]['id']) => void
 }
 
-function subscribeToTopWindow() {
-  return () => {}
-}
-
-function getIsTopWindow() {
-  return window.self === window.top
-}
-
 export function PagePreviewTooltip({
   preview,
   x,
@@ -46,61 +39,54 @@ export function PagePreviewTooltip({
   onReviewSelect,
 }: PagePreviewTooltipProps) {
   const [reviewsExpanded, setReviewsExpanded] = useState(false)
-  const isTopWindow = useSyncExternalStore(
-    subscribeToTopWindow,
-    getIsTopWindow,
-    () => false,
-  )
   const reviewsActive = preview?.id === 'reviews'
 
   return (
     <>
-      {isTopWindow && (
-        <>
-          <motion.div
-            aria-hidden={!reviewsActive}
-            inert={!reviewsActive}
-            className="absolute bottom-full left-0 z-50 origin-bottom pb-5"
-            style={{ pointerEvents: reviewsActive ? 'auto' : 'none' }}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={() => {
-              setReviewsExpanded(false)
-              onMouseLeave?.()
-            }}
-            initial={false}
-            animate={
-              reviewsActive
-                ? { opacity: 1, visibility: 'visible', x, y: 0 }
-                : { opacity: 0, visibility: 'hidden', x, y: 0 }
-            }
-            transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
-          >
-            <div className="-translate-x-1/2">
-              <ReviewPreviewStack
-                expanded={reviewsExpanded}
-                onExpand={() => setReviewsExpanded(true)}
-                onReviewSelect={onReviewSelect}
-              />
-            </div>
-          </motion.div>
-          {PAGE_PREVIEWS.map((item) => (
-            <PersistentPagePreview
-              key={item.id}
-              active={preview?.id === item.id}
-              href={item.href}
-              label={item.label}
-              onMouseEnter={onMouseEnter}
-              onMouseLeave={onMouseLeave}
-              x={x}
-            />
-          ))}
-        </>
-      )}
+      <motion.div
+        aria-hidden={!reviewsActive}
+        inert={!reviewsActive}
+        className="absolute bottom-full left-0 z-50 origin-bottom pb-5"
+        style={{ pointerEvents: reviewsActive ? 'auto' : 'none' }}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={() => {
+          setReviewsExpanded(false)
+          onMouseLeave?.()
+        }}
+        initial={false}
+        animate={
+          reviewsActive
+            ? { opacity: 1, visibility: 'visible', x, y: 0 }
+            : { opacity: 0, visibility: 'hidden', x, y: 0 }
+        }
+        transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
+      >
+        <div className="-translate-x-1/2">
+          <ReviewPreviewStack
+            expanded={reviewsExpanded}
+            onExpand={() => setReviewsExpanded(true)}
+            onReviewSelect={onReviewSelect}
+          />
+        </div>
+      </motion.div>
+      {PAGE_PREVIEWS.map((item) => (
+        <PersistentPagePreview
+          key={item.id}
+          id={item.id}
+          active={preview?.id === item.id}
+          href={item.href}
+          label={item.label}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          x={x}
+        />
+      ))}
     </>
   )
 }
 
 function PersistentPagePreview({
+  id,
   active,
   href,
   label,
@@ -108,6 +94,7 @@ function PersistentPagePreview({
   onMouseLeave,
   x,
 }: {
+  id: (typeof PAGE_PREVIEWS)[number]['id']
   active: boolean
   href: string
   label: string
@@ -132,10 +119,8 @@ function PersistentPagePreview({
       transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
     >
       <div className="group relative aspect-video w-52 -translate-x-1/2 rounded-xl">
-        <div className="relative z-10 aspect-video overflow-hidden rounded-xl border-2 border-white/80 bg-[#f4f4f4] p-0.5 shadow-xl transition-transform duration-200 group-hover:-translate-y-0.5 dark:border-white/15 dark:bg-[#181818]">
-          <div className="absolute inset-0">
-            <PreviewFrame href={href} label={label} />
-          </div>
+        <div className="relative z-10 aspect-video overflow-hidden rounded-xl border-2 border-[#E8E6E3] bg-[#f4f4f4] shadow-xl transition-transform duration-200 group-hover:-translate-y-0.5 dark:border-white/15 dark:bg-[#181818]">
+          <PreviewFrame id={id} />
         </div>
         <Link
           href={href}
@@ -173,11 +158,8 @@ function ReviewPreviewStack({
             onMouseEnter={index === 0 ? onExpand : undefined}
             onFocus={index === 0 ? onExpand : undefined}
           >
-            <div className="relative h-full overflow-hidden rounded-xl border-2 border-white/80 bg-[#f4f4f4] p-0.5 shadow-xl transition-transform duration-200 hover:-translate-y-0.5 dark:border-white/15 dark:bg-[#181818]">
-              <PreviewFrame
-                href={`/reviews?collection=${item.id}`}
-                label={item.label}
-              />
+            <div className="relative h-full overflow-hidden rounded-xl border-2 border-[#E8E6E3] bg-[#f4f4f4] shadow-xl transition-transform duration-200 hover:-translate-y-0.5 dark:border-white/15 dark:bg-[#181818]">
+              <PreviewFrame id={item.id} />
               <Link
                 href={`/reviews?collection=${item.id}`}
                 aria-label={`Open ${item.label} reviews`}
@@ -192,32 +174,23 @@ function ReviewPreviewStack({
   )
 }
 
-function PreviewFrame({ href, label }: { href: string; label: string }) {
+function PreviewFrame({
+  id,
+}: {
+  id:
+    | (typeof PAGE_PREVIEWS)[number]['id']
+    | (typeof REVIEW_PREVIEWS)[number]['id']
+}) {
   const { resolvedTheme } = useTheme()
-  const frameRef = useRef<HTMLIFrameElement>(null)
-
-  const syncFrameTheme = () => {
-    const root = frameRef.current?.contentDocument?.documentElement
-    if (!root) return
-
-    root.classList.toggle('dark', resolvedTheme === 'dark')
-    root.classList.toggle('light', resolvedTheme === 'light')
-    root.style.colorScheme = resolvedTheme
-  }
-
-  useLayoutEffect(syncFrameTheme, [resolvedTheme])
 
   return (
-    <div className="relative aspect-video overflow-hidden rounded-lg bg-[#fafafa] dark:bg-[#111]">
-      <iframe
-        ref={frameRef}
-        src={href}
-        title={`${label} page preview`}
-        tabIndex={-1}
-        loading="eager"
-        onLoad={syncFrameTheme}
-        className="pointer-events-none h-[720px] w-[1280px] origin-top-left scale-[0.15625] border-0"
-      />
-    </div>
+    <Image
+      src={`/previews/${id}-${resolvedTheme}.png`}
+      alt=""
+      width={416}
+      height={234}
+      unoptimized
+      className="block h-full w-full object-cover"
+    />
   )
 }

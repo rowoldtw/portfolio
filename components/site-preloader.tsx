@@ -89,6 +89,27 @@ function WordsPreloader({ onComplete }: { onComplete: () => void }) {
   }, [word, reducedMotion])
 
   return (
+    <PreloaderCurtain
+      word={word}
+      leaving={leaving}
+      reducedMotion={reducedMotion}
+      onComplete={onComplete}
+    />
+  )
+}
+
+function PreloaderCurtain({
+  word,
+  leaving,
+  reducedMotion,
+  onComplete,
+}: {
+  word: number
+  leaving: boolean
+  reducedMotion: boolean
+  onComplete: () => void
+}) {
+  return (
     <motion.div
       data-site-preloader=""
       data-cursor-exclude=""

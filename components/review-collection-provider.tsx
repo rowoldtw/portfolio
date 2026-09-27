@@ -14,10 +14,15 @@ const ReviewCollectionContext = createContext<{
   collection: ReviewCollection
   setCollection: (collection: ReviewCollection) => void
 } | null>(null)
+const COLLECTION_CHANGE_EVENT = 'reviewcollectionchange'
 
 function subscribeToUrlCollection(callback: () => void) {
   window.addEventListener('popstate', callback)
-  return () => window.removeEventListener('popstate', callback)
+  window.addEventListener(COLLECTION_CHANGE_EVENT, callback)
+  return () => {
+    window.removeEventListener('popstate', callback)
+    window.removeEventListener(COLLECTION_CHANGE_EVENT, callback)
+  }
 }
 
 function getUrlCollection(): ReviewCollection | null {
@@ -57,6 +62,7 @@ export function ReviewCollectionProvider({
     const url = new URL(window.location.href)
     url.searchParams.set('collection', nextCollection)
     window.history.replaceState(window.history.state, '', url)
+    window.dispatchEvent(new Event(COLLECTION_CHANGE_EVENT))
   }, [])
 
   return (

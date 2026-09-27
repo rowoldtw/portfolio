@@ -7,7 +7,7 @@ import {
   Variants,
   AnimatePresenceProps,
 } from 'motion/react'
-import { useState, useEffect, Children } from 'react'
+import { useState, useEffect, useRef, Children } from 'react'
 
 export type TextLoopProps = {
   children: React.ReactNode[]
@@ -33,20 +33,19 @@ export function TextLoop({
   pauseOnHover = false,
 }: TextLoopProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const currentIndexRef = useRef(0)
   const [isPaused, setIsPaused] = useState(false)
   const items = Children.toArray(children)
 
   useEffect(() => {
-    if (!trigger) return
-    if (isPaused) return
+    if (!trigger || isPaused || items.length === 0) return
 
     const intervalMs = interval * 1000
     const timer = setInterval(() => {
-      setCurrentIndex((current) => {
-        const next = (current + 1) % items.length
-        onIndexChange?.(next)
-        return next
-      })
+      const next = (currentIndexRef.current + 1) % items.length
+      currentIndexRef.current = next
+      setCurrentIndex(next)
+      onIndexChange?.(next)
     }, intervalMs)
     return () => clearInterval(timer)
   }, [items.length, interval, isPaused, onIndexChange, trigger])

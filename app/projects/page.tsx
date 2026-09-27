@@ -11,19 +11,19 @@ export const metadata: Metadata = {
 
 const projects: ShowcaseProject[] = [
   {
-    title: 'Project 01',
+    title: 'Amarula',
     category: 'Web design',
     imageSrc: '/projects/placeholder-01.svg',
     imageAlt: 'Placeholder website interface in sage green',
   },
   {
-    title: 'Project 02',
+    title: 'Rooibos',
     category: 'Motion & interaction',
     imageSrc: '/projects/placeholder-02.svg',
     imageAlt: 'Placeholder website interface in warm neutral colors',
   },
   {
-    title: 'Project 03',
+    title: 'Muta',
     category: 'Digital experience',
     imageSrc: '/projects/placeholder-03.svg',
     imageAlt: 'Placeholder website interface in soft lavender',
