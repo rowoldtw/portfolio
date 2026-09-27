@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Command } from 'cmdk'
-import { motion, useReducedMotion } from 'motion/react'
+import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import { ArrowRight, CornerDownLeft, Search } from 'lucide-react'
 
 type SkiperCommand = {
@@ -30,6 +30,14 @@ export function SkiperCommandMenu({
   const triggerRef = useRef<HTMLElement | null>(null)
   const reducedMotion = useReducedMotion()
   const groups = Array.from(new Set(commands.map((command) => command.group)))
+  const firstCommandId = commands[0]?.id ?? ''
+  const [selectedCommandId, setSelectedCommandId] = useState(firstCommandId)
+  const [selectionSource, setSelectionSource] = useState<
+    'keyboard' | 'pointer'
+  >('keyboard')
+  const selectedCommand = commands.find(
+    (command) => command.id === selectedCommandId,
+  )
 
   useEffect(() => {
     if (!open) return
@@ -76,7 +84,7 @@ export function SkiperCommandMenu({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="data-[state=open]:animate-in data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] motion-reduce:animate-none" />
+        <Dialog.Overlay className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 fixed inset-0 z-[85] bg-black/45 backdrop-blur-[2px] motion-reduce:animate-none" />
         <Dialog.Content
           onOpenAutoFocus={() => {
             triggerRef.current = document.activeElement as HTMLElement
@@ -85,7 +93,7 @@ export function SkiperCommandMenu({
             event.preventDefault()
             triggerRef.current?.focus()
           }}
-          className="fixed top-1/2 left-1/2 z-60 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 overscroll-none outline-none"
+          className="data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 fixed top-1/2 left-1/2 z-[90] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overscroll-none outline-none motion-reduce:data-[state=closed]:animate-none"
         >
           <Dialog.Title className="sr-only">
             Portfolio command menu
@@ -94,13 +102,23 @@ export function SkiperCommandMenu({
             Search pages and interface commands.
           </Dialog.Description>
           <motion.div
-            initial={reducedMotion ? false : { opacity: 0, scale: 0.98, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }}
-            className="overflow-hidden overscroll-none rounded-2xl border border-black/10 bg-[#F5F4F3] text-zinc-900 shadow-2xl dark:border-white/10 dark:bg-[#121212] dark:text-zinc-100"
+            initial={reducedMotion ? false : { opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              duration: reducedMotion ? 0 : 0.18,
+              ease: [0.23, 1, 0.32, 1],
+            }}
+            className="overflow-hidden overscroll-none rounded-[24px] border border-black/10 bg-[#F5F4F3] text-zinc-900 shadow-2xl dark:border-[#1F1F1F] dark:bg-[#121212] dark:text-zinc-100"
           >
-            <Command loop label="Portfolio commands" className="w-full">
-              <div className="m-2 flex h-11 items-center gap-2.5 rounded-xl border border-black/10 bg-black/[0.025] px-4 dark:border-white/10 dark:bg-white/[0.025]">
+            <Command
+              loop
+              label="Portfolio commands"
+              value={selectedCommandId}
+              onValueChange={setSelectedCommandId}
+              onKeyDownCapture={() => setSelectionSource('keyboard')}
+              className="w-full"
+            >
+              <div className="m-2 flex h-10 items-center gap-2 rounded-2xl bg-[#FCFCFC] px-3 dark:border dark:border-[#1F1F1F] dark:bg-[#121212]">
                 <Search
                   aria-hidden="true"
                   className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
@@ -112,50 +130,75 @@ export function SkiperCommandMenu({
                   className="h-full min-w-0 flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                 />
               </div>
-              <Command.List className="scrollbar-hidden h-[min(27rem,60dvh)] overflow-y-auto overscroll-none px-3 py-3">
+              <Command.List className="scrollbar-hidden h-[min(22rem,60dvh)] overflow-y-auto overscroll-none px-2 py-1">
                 <Command.Empty className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-500">
                   No matching commands.
                 </Command.Empty>
-                {groups.map((group) => (
-                  <Command.Group
-                    key={group}
-                    heading={group}
-                    className="px-1 pb-2 text-xs text-zinc-500 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2"
-                  >
-                    {commands
-                      .filter((command) => command.group === group)
-                      .map((command) => (
-                        <Command.Item
-                          key={command.id}
-                          value={command.id}
-                          keywords={[command.label, command.description]}
-                          disabled={command.disabled}
-                          onSelect={command.onSelect}
-                          className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-700 outline-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-35 data-[selected=true]:bg-black/[0.055] data-[selected=true]:text-zinc-950 dark:text-zinc-300 dark:data-[selected=true]:bg-white/[0.055] dark:data-[selected=true]:text-white"
-                        >
-                          <ArrowRight
-                            aria-hidden="true"
-                            className="size-4 shrink-0 text-zinc-500"
-                          />
-                          <span className="min-w-0 flex-1 truncate">
-                            {command.label}
-                          </span>
-                          <span className="flex size-6 shrink-0 items-center justify-center text-zinc-500 [&_svg]:size-4">
-                            {command.icon}
-                          </span>
-                        </Command.Item>
-                      ))}
-                  </Command.Group>
-                ))}
+                <LayoutGroup id="command-menu-options">
+                  {groups.map((group) => (
+                    <Command.Group
+                      key={group}
+                      heading={group}
+                      className="px-1 pb-1 text-xs text-zinc-500 [&_[cmdk-group-heading]]:relative [&_[cmdk-group-heading]]:z-10 [&_[cmdk-group-heading]]:bg-[#F5F4F3] [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 dark:[&_[cmdk-group-heading]]:bg-[#121212]"
+                    >
+                      {commands
+                        .filter((command) => command.group === group)
+                        .map((command) => (
+                          <Command.Item
+                            key={command.id}
+                            value={command.id}
+                            keywords={[command.label, command.description]}
+                            disabled={command.disabled}
+                            onSelect={command.onSelect}
+                            onPointerEnter={(event) => {
+                              if (event.pointerType === 'touch') return
+                              setSelectionSource('pointer')
+                              setSelectedCommandId(command.id)
+                            }}
+                            aria-description={command.description}
+                            className="group relative isolate flex cursor-pointer items-center gap-2.5 rounded-2xl px-2.5 py-2 text-sm font-medium text-zinc-700 outline-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-35 data-[selected=true]:text-zinc-950 dark:text-zinc-300 dark:data-[selected=true]:text-white"
+                          >
+                            {selectedCommandId === command.id && (
+                              <motion.div
+                                layoutId="command-option-shade"
+                                initial={false}
+                                transition={{
+                                  duration:
+                                    selectionSource === 'pointer' &&
+                                    !reducedMotion
+                                      ? 0.12
+                                      : 0,
+                                  ease: [0.23, 1, 0.32, 1],
+                                }}
+                                className="pointer-events-none absolute inset-0 -z-10 rounded-2xl bg-[#FCFCFC] dark:bg-[#161616]"
+                              />
+                            )}
+                            <ArrowRight
+                              aria-hidden="true"
+                              className="size-4 shrink-0 text-zinc-500"
+                            />
+                            <span className="min-w-0 flex-1 truncate">
+                              {command.label}
+                            </span>
+                            <span className="flex size-6 shrink-0 items-center justify-center text-zinc-500 [&_svg]:size-4">
+                              {command.icon}
+                            </span>
+                          </Command.Item>
+                        ))}
+                    </Command.Group>
+                  ))}
+                </LayoutGroup>
               </Command.List>
-              <div className="flex h-14 items-center justify-between border-t border-black/10 px-4 text-[11px] text-zinc-500 dark:border-white/10">
+              <div className="flex h-11 items-center justify-between gap-3 border-t border-black/10 bg-[#F9F8F7] px-3 text-[11px] text-zinc-500 dark:border-[#1F1F1F] dark:bg-[#141414]">
                 <span className="flex items-center gap-2">
-                  <span className="flex size-5 items-center justify-center rounded border border-black/10 dark:border-white/10">
+                  <span className="flex size-5 items-center justify-center rounded border border-black/10 dark:border-[#1F1F1F]">
                     <CornerDownLeft aria-hidden="true" className="size-3" />
                   </span>
                   Run command
                 </span>
-                <span>esc to close</span>
+                <span className="truncate text-right" aria-live="polite">
+                  {selectedCommand?.description ?? 'Choose a command'}
+                </span>
               </div>
             </Command>
           </motion.div>

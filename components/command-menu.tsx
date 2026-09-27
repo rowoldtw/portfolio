@@ -1,6 +1,5 @@
 'use client'
 
-import * as React from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   BriefcaseBusiness,
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react'
 import { PRELOADER_REPLAY_EVENT } from '@/components/site-preloader'
 import { useTheme } from '@/components/theme-provider'
+import { animateThemeChange } from '@/components/theme-transition'
 import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import { SkiperCommandMenu } from '@/components/ui/skiper-command-menu'
 
@@ -48,31 +48,6 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
   const { setTheme } = useTheme()
   const prefersReducedMotion = usePrefersReducedMotion()
 
-  React.useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.key.toLowerCase() !== 'k' ||
-        (!event.metaKey && !event.ctrlKey)
-      ) {
-        return
-      }
-
-      event.preventDefault()
-      onOpenChange(!open)
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onOpenChange, open])
-
-  const runCommand = React.useCallback(
-    (command: () => void) => {
-      onOpenChange(false)
-      command()
-    },
-    [onOpenChange],
-  )
-
   const goToPage = (href: string) => {
     if (pathname !== href) {
       router.push(href)
@@ -94,10 +69,12 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
       id: item.href,
       label: item.label,
       group: 'Pages',
-      description: item.disabled ? 'Page · Coming soon' : 'Open page',
+      description: item.disabled
+        ? 'Page coming soon'
+        : `Open ${item.label} page`,
       icon: <item.icon />,
       disabled: item.disabled,
-      onSelect: () => runCommand(() => goToPage(item.href)),
+      onSelect: () => goToPage(item.href),
     })),
     ...(
       [
@@ -109,17 +86,20 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
       id: item.theme,
       label: `Use ${item.theme} theme`,
       group: 'Appearance',
-      description: 'Appearance',
+      description:
+        item.theme === 'system'
+          ? 'Follow system appearance'
+          : `Switch to ${item.theme} appearance`,
       icon: <item.icon />,
-      onSelect: () => runCommand(() => setTheme(item.theme)),
+      onSelect: () => animateThemeChange(() => setTheme(item.theme)),
     })),
     {
       id: 'replay',
       label: 'Replay preloader',
       group: 'Actions',
-      description: 'Replay intro animation',
+      description: 'Play the introduction again',
       icon: <Play />,
-      onSelect: () => runCommand(replayPreloader),
+      onSelect: replayPreloader,
     },
   ]
 

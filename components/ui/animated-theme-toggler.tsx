@@ -3,15 +3,13 @@
 import * as React from 'react'
 import { motion } from 'motion/react'
 import { useTheme } from '@/components/theme-provider'
-import { createAnimation } from '@/components/ui/skiper-ui/skiper26'
+import { animateThemeChange } from '@/components/theme-transition'
 
 import { cn } from '@/lib/utils'
 
 type AnimatedThemeTogglerProps = {
   className?: string
 }
-
-const TRANSITION_STYLE_ID = 'theme-transition-styles'
 
 export function AnimatedThemeToggler({ className }: AnimatedThemeTogglerProps) {
   const { resolvedTheme, setTheme } = useTheme()
@@ -21,30 +19,15 @@ export function AnimatedThemeToggler({ className }: AnimatedThemeTogglerProps) {
 
   const toggleTheme = React.useCallback(() => {
     const switchTheme = () => setTheme(isDark ? 'light' : 'dark')
-    const reduceMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches
-
-    if (reduceMotion || isTransitioning || !document.startViewTransition) {
+    if (isTransitioning) {
       switchTheme()
       return
     }
 
-    const animation = createAnimation('rectangle', 'top-down', false)
-    let styleElement = document.getElementById(
-      TRANSITION_STYLE_ID,
-    ) as HTMLStyleElement | null
+    const transition = animateThemeChange(switchTheme)
+    if (!transition) return
 
-    if (!styleElement) {
-      styleElement = document.createElement('style')
-      styleElement.id = TRANSITION_STYLE_ID
-      document.head.appendChild(styleElement)
-    }
-
-    styleElement.textContent = animation.css
     setIsTransitioning(true)
-
-    const transition = document.startViewTransition(switchTheme)
     void transition.finished.finally(() => setIsTransitioning(false))
   }, [isDark, isTransitioning, setTheme])
 
@@ -55,7 +38,7 @@ export function AnimatedThemeToggler({ className }: AnimatedThemeTogglerProps) {
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
       title={`Switch to ${isDark ? 'light' : 'dark'} theme`}
       className={cn(
-        'inline-flex size-7 items-center justify-center rounded-full bg-black/[0.035] text-zinc-600 transition-colors duration-200 hover:bg-black/[0.07] hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none disabled:cursor-wait dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/[0.1] dark:hover:text-zinc-50 dark:focus-visible:ring-zinc-500/60',
+        'inline-flex size-7 items-center justify-center rounded-full bg-black/[0.035] text-zinc-600 transition-colors duration-200 hover:bg-black/[0.07] hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none disabled:cursor-default dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/[0.1] dark:hover:text-zinc-50 dark:focus-visible:ring-zinc-500/60',
         className,
       )}
       disabled={isTransitioning}

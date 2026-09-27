@@ -35,8 +35,6 @@ export default function HomePage() {
               <span data-cursor-link-label="">Reviews</span>
             </Link>
             <span
-              role="link"
-              aria-disabled="true"
               className="cursor-not-allowed text-zinc-400 dark:text-zinc-600"
             >
               Resume

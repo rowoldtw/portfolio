@@ -8,11 +8,11 @@ import {
   useState,
 } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { LayoutGroup, MotionConfig, motion } from 'motion/react'
 import { useReviewCollection } from '@/components/review-collection-provider'
 import { usePathname } from 'next/navigation'
 import { Command as CommandIcon } from 'lucide-react'
-import { CommandMenu } from '@/components/command-menu'
 import { AnimatedBackground } from '@/components/ui/animated-background'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import {
@@ -23,6 +23,9 @@ import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import { cn } from '@/lib/utils'
 
 const MotionLink = motion.create(Link)
+const CommandMenu = dynamic(() =>
+  import('@/components/command-menu').then((module) => module.CommandMenu),
+)
 const reviewOptions = [
   { id: 'hardware', label: 'Hardware' },
   { id: 'software', label: 'Software' },
@@ -55,6 +58,7 @@ export function Footer({ className }: { className?: string }) {
   const reviewsExpanded = activePageId === 'reviews'
   const activeItemId = reviewsExpanded ? collection : activePageId
   const [isCommandMenuOpen, setIsCommandMenuOpen] = useState(false)
+  const [hasOpenedCommandMenu, setHasOpenedCommandMenu] = useState(false)
   const [activePagePreview, setActivePagePreview] =
     useState<ActivePagePreview | null>(null)
   const [pagePreviewX, setPagePreviewX] = useState(0)
@@ -65,6 +69,24 @@ export function Footer({ className }: { className?: string }) {
   const prefersReducedMotion = usePrefersReducedMotion()
   const pagePreview =
     activePagePreview?.pathname === pathname ? activePagePreview.preview : null
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key.toLowerCase() !== 'k' ||
+        (!event.metaKey && !event.ctrlKey)
+      ) {
+        return
+      }
+
+      event.preventDefault()
+      setHasOpenedCommandMenu(true)
+      setIsCommandMenuOpen((open) => !open)
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const cancelPagePreviewClose = useCallback(() => {
     if (!pagePreviewCloseTimerRef.current) return
@@ -189,10 +211,13 @@ export function Footer({ className }: { className?: string }) {
             data-site-navbar-shell=""
             className="pointer-events-auto relative w-fit max-w-full"
           >
-            <CommandMenu
-              open={isCommandMenuOpen}
-              onOpenChange={setIsCommandMenuOpen}
-            />
+            <div aria-hidden="true" data-site-navbar-frame="" />
+            {hasOpenedCommandMenu && (
+              <CommandMenu
+                open={isCommandMenuOpen}
+                onOpenChange={setIsCommandMenuOpen}
+              />
+            )}
             <motion.footer
               layout
               data-site-navbar=""
@@ -291,7 +316,10 @@ export function Footer({ className }: { className?: string }) {
                     type="button"
                     aria-label="Open command menu (Command K)"
                     aria-expanded={isCommandMenuOpen}
-                    onClick={() => setIsCommandMenuOpen(true)}
+                    onClick={() => {
+                      setHasOpenedCommandMenu(true)
+                      setIsCommandMenuOpen(true)
+                    }}
                     className={cn(
                       'inline-flex size-7 shrink-0 items-center justify-center rounded-full text-zinc-500 transition-[background-color,color,transform] duration-200 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-50 dark:focus-visible:ring-zinc-500/60',
                       isCommandMenuOpen &&

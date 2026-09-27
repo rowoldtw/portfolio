@@ -19,6 +19,7 @@ function Cursor({ pathname }: { pathname: string }) {
   const stackRef = useRef<HTMLDivElement>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
   const [linkWidth, setLinkWidth] = useState<number | null>(null)
+  const [maskExpanded, setMaskExpanded] = useState(false)
   const reducedMotion = usePrefersReducedMotion()
   const active = preview?.active ?? false
 
@@ -31,21 +32,29 @@ function Cursor({ pathname }: { pathname: string }) {
     let currentRow: Element | null = null
     let currentGroup: Element | null = null
     let images: string[] = []
+    let maskTimer: number | null = null
+    let maskActive = false
+    let maskStartedAt = 0
     let x = 0
     let y = 0
 
     const select = (target: Element | null) => {
       const disabled = target?.closest(':disabled, [aria-disabled="true"]')
+      const row = target?.closest('[data-project-cursor]') ?? null
       const control = target?.closest(
         'a[href], button, summary, input, textarea, select, label, [role="button"], [role="link"], [role="option"], [contenteditable="true"]',
       )
       const selectable = !disabled && Boolean(control)
-      position.dataset.cursorSelectable = selectable ? 'true' : 'false'
+      position.dataset.cursorSelectable =
+        selectable && !maskActive && !row ? 'true' : 'false'
 
-      const underlineScope = target?.closest('[data-cursor-link-underline]')
-      const anchor = underlineScope && !disabled
-        ? target?.closest<HTMLAnchorElement>('a[href]')
-        : null
+      const underlineScope = maskActive
+        ? null
+        : target?.closest('[data-cursor-link-underline]')
+      const anchor =
+        underlineScope && !disabled
+          ? target?.closest<HTMLAnchorElement>('a[href]')
+          : null
       const link = anchor?.textContent?.trim() ? anchor : null
 
       if (link && link !== currentLink) {
@@ -71,7 +80,6 @@ function Cursor({ pathname }: { pathname: string }) {
         setLinkWidth(null)
       }
 
-      const row = target?.closest('[data-project-cursor]') ?? null
       if (row === currentRow) return
       currentRow = row
       const group = row?.closest('[data-project-images]')
@@ -92,17 +100,50 @@ function Cursor({ pathname }: { pathname: string }) {
       })
     }
 
+    const collapseMask = () => {
+      maskActive = false
+      delete document.documentElement.dataset.landingMaskExpanded
+      setMaskExpanded(false)
+      maskTimer = null
+      select(document.elementFromPoint(x, y))
+    }
+    const cancelMask = () => {
+      if (maskTimer) window.clearTimeout(maskTimer)
+      if (maskActive) collapseMask()
+    }
     const release = () => {
       delete position.dataset.cursorPressed
+      if (!maskActive) return
+      if (maskTimer) window.clearTimeout(maskTimer)
+      const remaining = Math.max(0, 120 - (performance.now() - maskStartedAt))
+      if (remaining === 0) collapseMask()
+      else maskTimer = window.setTimeout(collapseMask, remaining)
     }
     const press = (event: PointerEvent) => {
       move(event)
       if (pointer.matches && event.pointerType === 'mouse') {
-        position.dataset.cursorPressed = 'true'
+        const onLandingPage =
+          event.target instanceof Element &&
+          Boolean(event.target.closest('[data-landing-page]')) &&
+          !event.target.closest('[data-landing-page] footer a[href]')
+        if (onLandingPage && !reducedMotion) {
+          if (maskTimer) window.clearTimeout(maskTimer)
+          maskActive = true
+          maskStartedAt = performance.now()
+          document.documentElement.dataset.landingMaskExpanded = 'true'
+          currentLink = null
+          delete position.dataset.cursorLink
+          position.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`
+          setLinkWidth(null)
+          setMaskExpanded(true)
+        } else {
+          position.dataset.cursorPressed = 'true'
+        }
       }
     }
     const hide = () => {
-      release()
+      delete position.dataset.cursorPressed
+      cancelMask()
       position.style.visibility = 'hidden'
       delete document.documentElement.dataset.customCursor
       delete position.dataset.cursorLink
@@ -135,7 +176,7 @@ function Cursor({ pathname }: { pathname: string }) {
     refreshRef.current = scroll
     window.addEventListener('pointerdown', press)
     window.addEventListener('pointerup', release)
-    window.addEventListener('pointercancel', release)
+    window.addEventListener('pointercancel', hide)
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerover', move)
     document.documentElement.addEventListener('pointerleave', hide)
@@ -148,7 +189,7 @@ function Cursor({ pathname }: { pathname: string }) {
       refreshRef.current = null
       window.removeEventListener('pointerdown', press)
       window.removeEventListener('pointerup', release)
-      window.removeEventListener('pointercancel', release)
+      window.removeEventListener('pointercancel', hide)
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerover', move)
       document.documentElement.removeEventListener('pointerleave', hide)
@@ -156,10 +197,12 @@ function Cursor({ pathname }: { pathname: string }) {
       window.removeEventListener('keydown', key)
       window.removeEventListener('scroll', scroll, true)
       pointer.removeEventListener('change', hide)
+      if (maskTimer) window.clearTimeout(maskTimer)
+      delete document.documentElement.dataset.landingMaskExpanded
       position.style.visibility = 'hidden'
       delete document.documentElement.dataset.customCursor
     }
-  }, [])
+  }, [reducedMotion])
 
   useEffect(() => {
     refreshRef.current?.()
@@ -184,26 +227,38 @@ function Cursor({ pathname }: { pathname: string }) {
       ref={positionRef}
       aria-hidden="true"
       data-custom-cursor-position=""
-      className="pointer-events-none invisible fixed top-0 left-0 z-[100] data-[cursor-link=true]:transition-transform data-[cursor-link=true]:duration-200 data-[cursor-link=true]:ease-out motion-reduce:transition-none"
+      className="pointer-events-none invisible fixed top-0 left-0 z-[100] data-[cursor-link=true]:transition-transform data-[cursor-link=true]:duration-200 data-[cursor-link=true]:[transition-timing-function:cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
     >
       <div
         data-project-preview={active ? '' : undefined}
         data-cursor-shape={
-          active ? 'preview' : linkWidth ? 'underline' : 'circle'
+          active
+            ? 'preview'
+            : maskExpanded
+              ? 'circle'
+              : linkWidth
+                ? 'underline'
+                : 'circle'
         }
         className="relative -translate-x-1/2 -translate-y-1/2 overflow-hidden [[data-cursor-pressed=true]_&]:scale-[0.88] [[data-cursor-pressed=true]_&]:[--cursor-scale-duration:100ms] [[data-cursor-selectable=true]:not([data-cursor-pressed=true])_&[data-cursor-shape=circle]]:scale-[1.45] [[data-cursor-selectable=true][data-cursor-pressed=true]_&[data-cursor-shape=circle]]:scale-[1.15]"
         style={{
-          width: active ? 400 : (linkWidth ?? 14),
-          height: active ? 250 : linkWidth ? 2 : 14,
-          borderRadius: active ? 12 : linkWidth ? 1 : 7,
+          scale: maskExpanded ? 1 : undefined,
+          width: active ? 400 : maskExpanded ? 350 : (linkWidth ?? 14),
+          height: active ? 250 : maskExpanded ? 350 : linkWidth ? 2 : 14,
+          borderRadius: active ? 12 : maskExpanded ? 175 : linkWidth ? 1 : 7,
           transition: reducedMotion
             ? 'none'
-            : 'width 240ms ease, height 240ms ease, border-radius 240ms ease, scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)',
+            : pathname === '/projects'
+              ? 'width 240ms ease, height 240ms ease, border-radius 240ms ease, scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)'
+              : 'width 180ms cubic-bezier(0.23, 1, 0.32, 1), height 180ms cubic-bezier(0.23, 1, 0.32, 1), border-radius 180ms cubic-bezier(0.23, 1, 0.32, 1), scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)',
         }}
       >
         <span
-          className="absolute inset-0 rounded-full bg-black dark:bg-white"
-          style={{ opacity: active ? 0 : 1 }}
+          className="absolute inset-0 rounded-full backdrop-invert"
+          style={{
+            opacity: active ? 0 : 1,
+            transition: reducedMotion ? 'none' : 'opacity 120ms ease',
+          }}
         />
         {preview && (
           <div
