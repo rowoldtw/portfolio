@@ -8,6 +8,8 @@ import { usePaginatedQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { ReviewCard } from '@/components/review-card'
 import { useReviewCollection } from '@/components/review-collection-provider'
+import { TextEffect } from '@/components/ui/text-effect'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import {
   ProximitySidebar,
   type ProximitySection,
@@ -40,7 +42,7 @@ function AlbumsCatalog({
       inert={!active}
       className={
         active
-          ? 'bg-background relative h-dvh overflow-hidden'
+          ? 'page-enter bg-background relative h-dvh overflow-hidden'
           : 'bg-background pointer-events-none invisible fixed inset-0 h-dvh overflow-hidden'
       }
     >
@@ -76,29 +78,38 @@ function AlbumsCatalog({
 
 export function ReviewsCatalog({
   initialPages,
+  initialCollection,
 }: {
   initialPages: Record<
     ReviewCollection,
     FunctionReturnType<typeof api.reviews.list>
   >
+  initialCollection: ReviewCollection
 }) {
   const { collection } = useReviewCollection()
+  const prefersReducedMotion = usePrefersReducedMotion()
+  const [hasHydrated, setHasHydrated] = useState(false)
+  const selectedCollection = hasHydrated ? collection : initialCollection
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setHasHydrated(true))
+    return () => cancelAnimationFrame(frame)
+  }, [])
   const [hasVisitedAlbums, setHasVisitedAlbums] = useState(false)
   useEffect(() => {
-    if (collection !== 'albums' || hasVisitedAlbums) return
+    if (selectedCollection !== 'albums' || hasVisitedAlbums) return
     const frame = requestAnimationFrame(() => setHasVisitedAlbums(true))
     return () => cancelAnimationFrame(frame)
-  }, [collection, hasVisitedAlbums])
+  }, [selectedCollection, hasVisitedAlbums])
   const {
     results: liveResults,
     status: liveStatus,
     loadMore,
   } = usePaginatedQuery(
     api.reviews.list,
-    { collection },
+    { collection: selectedCollection },
     { initialNumItems: 48 },
   )
-  const initialPage = initialPages[collection]
+  const initialPage = initialPages[selectedCollection]
   const results =
     liveStatus === 'LoadingFirstPage' ? initialPage.page : liveResults
   const status =
@@ -109,7 +120,7 @@ export function ReviewsCatalog({
       : liveStatus
   const sections = useMemo(
     () =>
-      collection === 'hardware'
+      selectedCollection === 'hardware'
         ? [
             {
               title: 'Hardware',
@@ -122,11 +133,11 @@ export function ReviewsCatalog({
           ]
         : [
             {
-              title: collection === 'software' ? 'Software' : 'Albums',
+              title: selectedCollection === 'software' ? 'Software' : 'Albums',
               items: results,
             },
           ],
-    [collection, results],
+    [selectedCollection, results],
   )
   const proximitySections = useMemo<ProximitySection[]>(
     () => [
@@ -150,14 +161,16 @@ export function ReviewsCatalog({
     hardware: 'products',
     software: 'apps',
     albums: 'albums',
-  }[collection]
+  }[selectedCollection]
 
   return (
     <>
-      {(collection === 'albums' || hasVisitedAlbums) && (
+      {(selectedCollection === 'albums' || hasVisitedAlbums) && (
         <AlbumsCatalog
-          active={collection === 'albums'}
-          albums={collection === 'albums' ? results : initialPages.albums.page}
+          active={selectedCollection === 'albums'}
+          albums={
+            selectedCollection === 'albums' ? results : initialPages.albums.page
+          }
           moreAvailable={status !== 'Exhausted'}
           loadingMore={status === 'LoadingMore'}
           disableLoadMore={
@@ -166,7 +179,7 @@ export function ReviewsCatalog({
           onLoadMore={() => loadMore(48)}
         />
       )}
-      {collection !== 'albums' && (
+      {selectedCollection !== 'albums' && (
         <main
           data-reviews-page=""
           className="bg-background min-h-dvh px-5 pt-20 pb-44 sm:px-10 sm:pt-28 dark:bg-[#080808]"
@@ -179,14 +192,27 @@ export function ReviewsCatalog({
           />
           <div className="mx-auto w-full max-w-5xl">
             <header className="mb-10 flex flex-wrap items-end justify-between gap-5">
-              <h1
-                id="reviews-top"
-                className="scroll-mt-28 text-3xl font-medium tracking-tight sm:text-4xl"
-              >
-                Reviews
-              </h1>
+              <div id="reviews-top" className="scroll-mt-28">
+                {prefersReducedMotion ? (
+                  <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
+                    Reviews
+                  </h1>
+                ) : (
+                  <TextEffect
+                    key={selectedCollection}
+                    as="h1"
+                    per="line"
+                    preset="fade-in-blur"
+                    speedReveal={1.25}
+                    speedSegment={0.8}
+                    className="text-3xl font-medium tracking-tight sm:text-4xl"
+                  >
+                    Reviews
+                  </TextEffect>
+                )}
+              </div>
             </header>
-            <div key={collection} className="page-enter">
+            <div key={selectedCollection}>
               {status === 'Exhausted' && results.length === 0 && (
                 <p className="text-sm text-zinc-500">No reviews here yet.</p>
               )}
@@ -199,7 +225,7 @@ export function ReviewsCatalog({
                     aria-label={title}
                     className="mt-10 scroll-mt-28 first:mt-0"
                   >
-                    <div className="mb-4 flex items-baseline gap-3">
+                    <div className="review-section-enter mb-4 flex items-baseline gap-3">
                       <h2 className="text-sm font-medium">{title}</h2>
                       {index === 0 && (
                         <span
@@ -214,11 +240,14 @@ export function ReviewsCatalog({
                       data-cursor-exclude=""
                       className="relative z-40 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3"
                     >
-                      {items.map((product) => (
+                      {items.map((product, itemIndex) => (
                         <div
                           key={product._id}
                           id={`review-${product._id}`}
-                          className="scroll-mt-28"
+                          className="review-item-enter scroll-mt-28"
+                          style={{
+                            animationDelay: `${Math.min(itemIndex, 10) * 45}ms`,
+                          }}
                         >
                           <ReviewCard product={product} />
                         </div>

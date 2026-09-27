@@ -17,6 +17,14 @@ import {
 export type ReviewProduct =
   import('@/convex/_generated/dataModel').Doc<'reviews'>
 
+function CurrentUseBadge() {
+  return (
+    <span className="pointer-events-none absolute top-3 left-3 z-10 inline-flex items-center rounded-lg bg-[#F5F4F3] px-2.5 py-1 text-[10px] font-medium tracking-wide text-zinc-900 dark:bg-[#121212] dark:text-zinc-100">
+      Currently using
+    </span>
+  )
+}
+
 export function ReviewCard({ product }: { product: ReviewProduct }) {
   const isAlbum = product.collection === 'albums'
   const subtitle = isAlbum ? product.brand : product.category
@@ -25,22 +33,26 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
     isAlbum ? 'aspect-square object-cover' : 'aspect-[16/9] object-contain',
     !isAlbum && 'p-5',
   )
-  const renderImage = () =>
-    product.collection === 'software' ? (
-      <div className="flex aspect-[16/9] w-full items-center justify-center rounded-lg bg-white dark:bg-[#202020]">
+  const renderImage = () => (
+    <div className="relative">
+      {product.collection === 'software' ? (
+        <div className="flex aspect-[16/9] w-full items-center justify-center rounded-lg bg-white dark:bg-[#202020]">
+          <MorphingDialogImage
+            src={product.image}
+            alt={product.alt}
+            className="size-24 shrink-0 rounded-[22%] object-contain"
+          />
+        </div>
+      ) : (
         <MorphingDialogImage
           src={product.image}
           alt={product.alt}
-          className="size-24 shrink-0 rounded-[22%] object-contain"
+          className={imageClass}
         />
-      </div>
-    ) : (
-      <MorphingDialogImage
-        src={product.image}
-        alt={product.alt}
-        className={imageClass}
-      />
-    )
+      )}
+      {product.currentlyUsing && <CurrentUseBadge />}
+    </div>
+  )
 
   return (
     <MorphingDialog

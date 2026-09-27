@@ -136,7 +136,10 @@ function Cursor({ pathname }: { pathname: string }) {
           position.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`
           setLinkWidth(null)
           setMaskExpanded(true)
-        } else {
+        } else if (
+          !(event.target instanceof Element) ||
+          !event.target.closest('[data-project-cursor]')
+        ) {
           position.dataset.cursorPressed = 'true'
         }
       }

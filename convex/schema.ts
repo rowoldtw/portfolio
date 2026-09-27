@@ -20,6 +20,7 @@ export const reviewFields = {
   alt: v.string(),
   url: v.string(),
   review: v.optional(v.string()),
+  currentlyUsing: v.optional(v.boolean()),
   published: v.boolean(),
   accessory: v.boolean(),
   sortOrder: v.number(),
