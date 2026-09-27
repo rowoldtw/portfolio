@@ -55,6 +55,11 @@ export function Footer({ className }: { className?: string }) {
   const pathname = usePathname()
   const activePageId = getActivePageId(pathname)
   const { collection, setCollection } = useReviewCollection()
+  const [hasHydrated, setHasHydrated] = useState(false)
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setHasHydrated(true))
+    return () => cancelAnimationFrame(frame)
+  }, [])
   const reviewsExpanded = activePageId === 'reviews'
   const activeItemId = reviewsExpanded ? collection : activePageId
   const [isCommandMenuOpen, setIsCommandMenuOpen] = useState(false)
@@ -248,7 +253,7 @@ export function Footer({ className }: { className?: string }) {
                     />
                   )}
                   <AnimatedBackground
-                    value={activeItemId}
+                    value={reviewsExpanded && !hasHydrated ? null : activeItemId}
                     className="rounded-full bg-white shadow-sm dark:bg-zinc-950"
                     transition={{
                       type: 'spring',
