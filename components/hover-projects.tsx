@@ -103,10 +103,10 @@ export function HoverProjects({ projects }: { projects: ShowcaseProject[] }) {
         {projects.map((project, index) => (
           <div
             key={project.title}
+            data-project-cursor={index}
             className="border-t border-zinc-300/70 last:border-b dark:border-zinc-800"
           >
             <button
-              data-project-cursor={index}
               type="button"
               aria-label={`Preview ${project.title}`}
               aria-expanded={false}

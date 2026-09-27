@@ -12,17 +12,19 @@ Convex writes `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL` to the ignored `.
 
 ## Existing content
 
-Run `pnpm exec convex run seed:reviews` once per deployment. It imports the 54 catalog items from `seedData.ts`. Running it again skips existing slugs and does not overwrite review text or other edits. The seed is migration data, not a frontend fallback; update Convex for ongoing changes.
+Run `pnpm exec convex run seed:reviews` once per deployment. It imports the catalog items from `seedData.ts`. Running it again preserves review text and other edits while syncing software platforms, icons, and explicitly marked publication status. The seed is migration data, not a frontend fallback; update Convex for ongoing changes.
+
+For an already seeded deployment, rerun `pnpm exec convex run seed:reviews` to add new catalog items and sync those software fields. Add `--prod` after `run` for production, after deploying the backend. Apps without supplied icons remain explicitly unpublished; Ghostty is published again. The seed never removes old records. Use `manageReviews:remove` when a catalog entry should be deleted.
 
 ## Add or edit a review
 
 Use the Convex dashboard's Data tab (`reviews`) or run the internal `manageReviews:save` function from the dashboard/CLI. CLI example:
 
 ```sh
-pnpm exec convex run manageReviews:save '{"slug":"example-app","collection":"software","name":"Example App","category":"Editor","brand":"Example","image":"/reviews/example.webp","alt":"Example App icon","url":"https://example.com","review":"My review text.","published":false,"accessory":false,"sortOrder":20}'
+pnpm exec convex run manageReviews:save '{"slug":"example-app","collection":"software","name":"Example App","category":"Editor","platform":"desktop","brand":"Example","image":"/reviews/example.webp","alt":"Example App icon","url":"https://example.com","review":"My review text.","published":false,"accessory":false,"sortOrder":20}'
 ```
 
-`save` replaces the complete document with the same slug, or inserts a new one. Include all fields you want to retain. Keep slugs unique. Optional `review` holds plain text with paragraph breaks; missing/blank text displays the current placeholder. `published: false` hides the entire item from visitors. `accessory` controls the hardware subsection. `sortOrder` is ascending for hardware/software. Albums use a numeric `releaseDate` (UTC Unix milliseconds), newest first. The internal save function requires an album release date.
+`save` replaces the complete document with the same slug, or inserts a new one. Include all fields you want to retain. Keep slugs unique. Optional `platform` is `desktop`, `mobile`, or `both` for software records; current cards do not display it. Optional `review` holds plain text with paragraph breaks; missing/blank text displays the current placeholder. `published: false` hides the entire item from visitors. `accessory` controls the hardware subsection. `sortOrder` is ascending for hardware/software. Albums use a numeric `releaseDate` (UTC Unix milliseconds), newest first. The internal save function requires an album release date.
 
 For existing images, use paths under `/public`, such as `/reviews/wooting-60he.webp`. New images must be added to `/public/reviews/` and deployed with the site, or use a trusted HTTPS image URL. The current cards use standard image elements. Images are not uploaded to Convex storage by this integration.
 

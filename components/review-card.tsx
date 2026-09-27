@@ -23,8 +23,24 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
   const imageClass = cn(
     'w-full rounded-lg bg-white dark:bg-[#202020]',
     isAlbum ? 'aspect-square object-cover' : 'aspect-[16/9] object-contain',
-    !isAlbum && (product.collection === 'software' ? 'p-9' : 'p-5'),
+    !isAlbum && 'p-5',
   )
+  const renderImage = () =>
+    product.collection === 'software' ? (
+      <div className="flex aspect-[16/9] w-full items-center justify-center rounded-lg bg-white dark:bg-[#202020]">
+        <MorphingDialogImage
+          src={product.image}
+          alt={product.alt}
+          className="size-24 shrink-0 rounded-[22%] object-contain"
+        />
+      </div>
+    ) : (
+      <MorphingDialogImage
+        src={product.image}
+        alt={product.alt}
+        className={imageClass}
+      />
+    )
 
   return (
     <MorphingDialog
@@ -35,11 +51,7 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
         style={{ borderRadius: 16 }}
         className="bg-[#F5F4F3] p-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-4 dark:bg-[#121212]"
       >
-        <MorphingDialogImage
-          src={product.image}
-          alt={product.alt}
-          className={imageClass}
-        />
+        {renderImage()}
         <div className="flex items-center justify-between gap-3 px-3 py-3">
           <div className="min-w-0">
             <MorphingDialogTitle className="text-sm font-medium tracking-tight">
@@ -57,11 +69,7 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
           style={{ borderRadius: 16 }}
           className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain bg-[#F5F4F3] p-2 text-zinc-900 dark:bg-[#121212] dark:text-zinc-100"
         >
-          <MorphingDialogImage
-            src={product.image}
-            alt={product.alt}
-            className={imageClass}
-          />
+          {renderImage()}
           <div className="px-4 pt-5 pb-4 sm:px-5">
             <MorphingDialogTitle
               dialogTitle
