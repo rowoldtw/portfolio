@@ -19,6 +19,27 @@ export const reviews = internalMutation({
           .withIndex('by_slug', (q) => q.eq('slug', product.id))
           .unique()
         if (existing) {
+          if (collection === 'software' && 'platform' in product) {
+            const imageChanged =
+              existing.image !== product.image || existing.alt !== product.alt
+            const publicationChanged =
+              'published' in product && product.published !== existing.published
+            if (
+              existing.platform !== product.platform ||
+              imageChanged ||
+              publicationChanged
+            ) {
+              await ctx.db.patch(existing._id, {
+                ...(existing.platform !== product.platform
+                  ? { platform: product.platform }
+                  : {}),
+                ...(imageChanged
+                  ? { image: product.image, alt: product.alt }
+                  : {}),
+                ...(publicationChanged ? { published: product.published } : {}),
+              })
+            }
+          }
           skipped++
           continue
         }
@@ -30,11 +51,12 @@ export const reviews = internalMutation({
           collection,
           name: product.name,
           category: product.category,
+          ...('platform' in product ? { platform: product.platform } : {}),
           brand: product.brand,
           image: product.image,
           alt: product.alt,
           url: product.url,
-          published: true,
+          published: !('published' in product && product.published === false),
           accessory: [
             'Mousepad',
             'Phone case',

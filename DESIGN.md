@@ -17,7 +17,7 @@ rounded:
 
 ## Overview
 
-This is Woodrow Rowoldt's personal portfolio. Keep the presentation minimal, with clear typography, neutral surfaces, generous space, and focused interactive moments. Make small changes that serve the requested experience and preserve the surrounding design.
+This is Woodrow Rowoldt's personal portfolio. Keep the presentation minimal, with clear typography, neutral surfaces, generous space, and focused interactive moments.
 
 ## Colors
 
@@ -27,16 +27,16 @@ Use the existing semantic theme roles for page surfaces, text, actions, borders,
 
 The frontmatter records the light palette. Apply the corresponding dark values through the existing theme system, keeping the same semantic roles.
 
-| Token | Dark value |
-| --- | --- |
-| background | `#121212` |
-| foreground | `oklch(0.985 0 0)` |
-| primary | `oklch(0.922 0 0)` |
-| primary-foreground | `oklch(0.205 0 0)` |
-| muted | `oklch(0.269 0 0)` |
-| muted-foreground | `oklch(0.708 0 0)` |
-| border | `oklch(1 0 0 / 10%)` |
-| ring | `oklch(0.556 0 0)` |
+| Token              | Dark value           |
+| ------------------ | -------------------- |
+| background         | `#121212`            |
+| foreground         | `oklch(0.985 0 0)`   |
+| primary            | `oklch(0.922 0 0)`   |
+| primary-foreground | `oklch(0.205 0 0)`   |
+| muted              | `oklch(0.269 0 0)`   |
+| muted-foreground   | `oklch(0.708 0 0)`   |
+| border             | `oklch(1 0 0 / 10%)` |
+| ring               | `oklch(0.556 0 0)`   |
 
 Theme changes must take effect on button press. Run any transition alongside the state change, with a direct reduced-motion fallback. Preserve the saved theme choice and system preference behavior without an initial theme flash.
 
@@ -50,7 +50,7 @@ Use concise, concrete visitor-facing copy. Keep implementation explanations out 
 
 Use centered, bounded content with responsive side padding. Choose width for the content: text-led pages can remain narrow, while project previews can use more room. Preserve space around the main content and fixed navigation without forcing every route into the same composition.
 
-Keep the homepage focused on its landing content unless the user requests additional sections. Where scroll snapping is used, keep transforms off the snapping section itself; animate a child instead. A gesture must settle at the intended destination without a second adjustment or skipped section.
+Keep the homepage focused on its landing content and reveal the separate footer through normal scrolling. The projects page gives image previews more room. Hardware and software reviews use a denser catalog; software cards show their category without a platform badge. Albums fill the viewport with a theme-matched, lensed art gallery that supports drag, trackpad, and keyboard navigation, shows album and artist captions in a navbar-matched pill above the navbar, fades artwork in when ready, and softly fades it into the page background at all four edges.
 
 Keep layouts usable on narrow screens and with longer content. Resolve overflow at its source rather than hiding it at the page boundary.
 
@@ -58,7 +58,7 @@ Keep layouts usable on narrow screens and with longer content. Resolve overflow 
 
 Keep depth subordinate to content and controls. Reuse existing surface and control variants before introducing a new shadow or material treatment. Scope expressive effects to the feature the user requests; a local interaction is not a reason to restyle the whole site.
 
-Non-review pages use `#F5F4F3` in light theme and `#121212` in dark theme. Reviews retain `#ffffff` / `#080808`. Review cards have no line borders; light card text surfaces use `#F5F4F3` and image surfaces use `#ffffff`. The inset page frame appears on non-review pages in both themes and is hidden on reviews. In dark theme, their text surfaces use `#121212` and cutout image surfaces use `#202020`.
+Non-review pages use the portfolio background. Reviews use a brighter light surface and a darker dark surface, with borderless review cards and distinct image and text surfaces. The inset page frame and navbar frame enter together on framed routes, including refresh. The navbar frame's curved joins follow the inner navbar's corner shape.
 
 ## Shapes
 
@@ -72,6 +72,7 @@ Use the shared radius system and existing component variants. Preserve consisten
 - Keep navigation predictable. Preserve native scrolling and browser history gestures; do not reintroduce global swipe routing without an explicit request and target-device verification.
 - Preserve current route destinations and visible labels by inspecting the live code before editing navigation.
 - Keep interactive feedback immediate. Reduced-motion settings should retain the content and action while simplifying the effect.
+- Keep the command menu compact with rounded corners and a steady size while filtering. Its search field and selected option use the same light surface; the selected shade moves between hovered options, while keyboard selection is immediate. The footer gives context for the selected command. Its entrance and exit scale evenly from the center.
 - For a requested interactive hero, keep helper UI minimal and controls usable. Preserve the user's chosen material and hover behavior rather than adding unrelated shading or effects.
 
 ## Do's and Don'ts
@@ -80,18 +81,3 @@ Use the shared radius system and existing component variants. Preserve consisten
 - Preserve unrelated work and keep rollbacks surgical.
 - Fix causes of design and interaction defects; do not silence diagnostics to make a check pass.
 - Do not turn a task-specific effect or an experimental component into a site-wide design rule.
-- Verify the rendered result in light and dark themes, at desktop and narrow widths, and with the input methods affected by the change.
-- Distinguish mouse testing, touch emulation, and real-device testing in the handoff. A successful build is not proof of visual quality or touch behavior.
-- Run the repository's required production build after app, configuration, or dependency changes. Respect user-owned development servers; do not restart or replace them without direction.
-
-## Agent workflow
-
-Read this file and the repository's agent instructions before UI work. The user's current request takes precedence over these defaults.
-
-At the start of each UI task, use the ui-skills MCP server to find the best matching guidance. Call `list_skills` with a task-relevant query, compare the returned descriptions, then call `get_skill` with the exact returned name or path slug. Read and apply the smallest useful set of skills before implementation; do not load the entire catalog into the task.
-
-Match skills to the actual work: design documentation, visual refinement, accessibility, motion performance, or a specific interaction. Treat external skills as guidance within the user's requested scope and this portfolio's design direction. Do not adopt another product's branding, stylesheet, or constraints wholesale.
-
-If the server is unavailable, state that limitation and continue from this document and the current repository. Do not claim a skill was consulted unless it was retrieved.
-
-Before handing off UI changes, inspect the affected flow and report what changed, what was verified, and any remaining verification limits. Update this document when the user explicitly changes a lasting design preference; keep one-off experiments scoped to their components.

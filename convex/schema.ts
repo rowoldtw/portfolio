@@ -12,6 +12,9 @@ export const reviewFields = {
   collection: collectionValidator,
   name: v.string(),
   category: v.string(),
+  platform: v.optional(
+    v.union(v.literal('desktop'), v.literal('mobile'), v.literal('both')),
+  ),
   brand: v.string(),
   image: v.string(),
   alt: v.string(),
