@@ -58,7 +58,7 @@ Keep layouts usable on narrow screens and with longer content. Resolve overflow 
 
 Keep depth subordinate to content and controls. Reuse existing surface and control variants before introducing a new shadow or material treatment. Scope expressive effects to the feature the user requests; a local interaction is not a reason to restyle the whole site.
 
-Non-review pages use the portfolio background. Reviews use a brighter light surface and a darker dark surface, with borderless review cards and distinct image and text surfaces. The inset page frame and navbar frame enter together on framed routes, including refresh. The navbar frame's curved joins follow the inner navbar's corner shape.
+Non-review pages use the portfolio background. Reviews use a brighter light surface and a darker dark surface, with borderless review cards and distinct image and text surfaces. The inset page frame and navbar frame stay stationary on framed routes, including refresh. The navbar frame's curved joins follow the inner navbar's corner shape.
 
 ## Shapes
 

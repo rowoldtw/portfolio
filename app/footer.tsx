@@ -292,12 +292,16 @@ export function Footer({ className }: { className?: string }) {
                           aria-current={
                             activePageId === link.id ? 'page' : undefined
                           }
-                          onMouseEnter={(event) =>
-                            showPagePreview(event.currentTarget, link)
-                          }
-                          onFocus={(event) =>
-                            showPagePreview(event.currentTarget, link)
-                          }
+                          onPointerEnter={(event) => {
+                            if (event.pointerType === 'mouse') {
+                              showPagePreview(event.currentTarget, link)
+                            }
+                          }}
+                          onFocus={(event) => {
+                            if (event.currentTarget.matches(':focus-visible')) {
+                              showPagePreview(event.currentTarget, link)
+                            }
+                          }}
                           onBlur={schedulePagePreviewClose}
                           onClick={(event) => handlePageLinkClick(event, link)}
                           className="shrink-0 rounded-full px-2.5 py-1.5 whitespace-nowrap text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] data-[checked=true]:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50"

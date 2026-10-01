@@ -277,28 +277,12 @@ html:has([data-reviews-page]) {
 html.dark:has([data-reviews-page]) {
   --background: #080808;
 }
-@media (prefers-reduced-motion: no-preference) {
-  body:not(:has([data-reviews-page])) .site-frame,
-  body:not(:has([data-reviews-page])) [data-site-navbar-frame] {
-    transition: transform 280ms cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  @starting-style {
-    body:not(:has([data-reviews-page])) .site-frame {
-      transform: scale(1.12);
-    }
-
-    body:not(:has([data-reviews-page])) [data-site-navbar-frame] {
-      transform: translateY(calc(100% + 1rem));
-    }
-  }
-}
-
 body:has([data-reviews-page]) .site-frame {
   transform: scale(1.12);
 }
 
 [data-site-navbar-shell] {
+  touch-action: manipulation;
   --site-navbar-frame: #fff;
   padding: 0.125rem 0.125rem max(0.25rem, env(safe-area-inset-bottom));
 }

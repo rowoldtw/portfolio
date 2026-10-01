@@ -1,7 +1,15 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+  type RefObject,
+} from 'react'
 import { usePathname } from 'next/navigation'
 import gsap from 'gsap'
 import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
@@ -13,6 +21,250 @@ export function CustomCursor() {
   return <Cursor pathname={pathname} />
 }
 
+function createCursorSelection(
+  position: HTMLDivElement,
+  setLinkWidth: Dispatch<SetStateAction<number | null>>,
+  setPreview: Dispatch<SetStateAction<Preview | null>>,
+) {
+  let currentLink: HTMLAnchorElement | null = null
+  let currentRow: Element | null = null
+  let currentGroup: Element | null = null
+  let images: string[] = []
+  const select = (
+    target: Element | null,
+    maskActive: boolean,
+    x: number,
+    y: number,
+  ) => {
+    const disabled = target?.closest(':disabled, [aria-disabled="true"]')
+    const row = target?.closest('[data-project-cursor]') ?? null
+    const control = target?.closest(
+      'a[href], button, summary, input, textarea, select, label, [role="button"], [role="link"], [role="option"], [contenteditable="true"]',
+    )
+    const selectable = !disabled && Boolean(control)
+    position.dataset.cursorSelectable =
+      selectable && !maskActive && !row ? 'true' : 'false'
+
+    const underlineScope = maskActive
+      ? null
+      : target?.closest('[data-cursor-link-underline]')
+    const anchor =
+      underlineScope && !disabled
+        ? target?.closest<HTMLAnchorElement>('a[href]')
+        : null
+    const link = anchor?.textContent?.trim() ? anchor : null
+
+    if (link && link !== currentLink) {
+      currentLink = link
+      position.dataset.cursorLink = 'true'
+      const label = link.querySelector<HTMLElement>('[data-cursor-link-label]')
+      const linkRect = link.getBoundingClientRect()
+      const labelRect = label?.getBoundingClientRect() ?? linkRect
+      const width = Math.max(12, labelRect.width)
+      const centerX = labelRect.left + labelRect.width / 2
+      const bottom = labelRect.bottom
+
+      position.style.transform = `translate3d(${centerX}px, ${bottom + 2}px, 0)`
+      setLinkWidth((current) =>
+        current === width ? current : Math.round(width * 100) / 100,
+      )
+    } else if (!link) {
+      currentLink = null
+      delete position.dataset.cursorLink
+      position.style.transform = `translate3d(${x}px, ${y}px, 0)`
+      setLinkWidth(null)
+    }
+
+    if (row === currentRow) return
+    currentRow = row
+    const group = row?.closest('[data-project-images]')
+    if (!row || !group) {
+      setPreview((current) => (current ? { ...current, active: false } : null))
+      return
+    }
+    if (group !== currentGroup) {
+      images = JSON.parse(group.getAttribute('data-project-images') ?? '[]')
+      currentGroup = group
+    }
+    setPreview({
+      active: true,
+      images,
+      index: Number(row.getAttribute('data-project-cursor')),
+    })
+  }
+
+  return {
+    select,
+    resetLink: () => {
+      currentLink = null
+    },
+    reset: () => {
+      currentLink = null
+      currentRow = null
+    },
+  }
+}
+
+function subscribeToCursorInteractions({
+  position,
+  refreshRef,
+  reducedMotion,
+  setLinkWidth,
+  setPreview,
+  setMaskExpanded,
+}: {
+  position: HTMLDivElement
+  refreshRef: RefObject<(() => void) | null>
+  reducedMotion: boolean
+  setLinkWidth: Dispatch<SetStateAction<number | null>>
+  setPreview: Dispatch<SetStateAction<Preview | null>>
+  setMaskExpanded: Dispatch<SetStateAction<boolean>>
+}) {
+  const pointer = window.matchMedia('(hover: hover) and (pointer: fine)')
+  const selection = createCursorSelection(position, setLinkWidth, setPreview)
+  let maskTimer: number | null = null
+  let maskActive = false
+  let maskStartedAt = 0
+  let x = 0
+  let y = 0
+
+  const collapseMask = () => {
+    maskActive = false
+    delete document.documentElement.dataset.landingMaskExpanded
+    setMaskExpanded(false)
+    maskTimer = null
+    selection.select(document.elementFromPoint(x, y), maskActive, x, y)
+  }
+  const cancelMask = () => {
+    if (maskTimer) window.clearTimeout(maskTimer)
+    if (maskActive) collapseMask()
+  }
+  const release = () => {
+    delete position.dataset.cursorPressed
+    if (!maskActive) return
+    if (maskTimer) window.clearTimeout(maskTimer)
+    const remaining = Math.max(0, 120 - (performance.now() - maskStartedAt))
+    if (remaining === 0) collapseMask()
+    else maskTimer = window.setTimeout(collapseMask, remaining)
+  }
+  const press = (event: PointerEvent) => {
+    move(event)
+    if (pointer.matches && event.pointerType === 'mouse') {
+      const onLandingPage =
+        event.target instanceof Element &&
+        Boolean(event.target.closest('[data-landing-page]')) &&
+        !event.target.closest('[data-landing-page] footer a[href]')
+      if (onLandingPage && !reducedMotion) {
+        if (maskTimer) window.clearTimeout(maskTimer)
+        maskActive = true
+        maskStartedAt = performance.now()
+        document.documentElement.dataset.landingMaskExpanded = 'true'
+        selection.resetLink()
+        delete position.dataset.cursorLink
+        position.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`
+        setLinkWidth(null)
+        setMaskExpanded(true)
+      } else if (
+        !(event.target instanceof Element) ||
+        !event.target.closest('[data-project-cursor]')
+      ) {
+        position.dataset.cursorPressed = 'true'
+      }
+    }
+  }
+  const hide = () => {
+    delete position.dataset.cursorPressed
+    cancelMask()
+    position.style.visibility = 'hidden'
+    delete document.documentElement.dataset.customCursor
+    delete position.dataset.cursorLink
+    selection.reset()
+    setLinkWidth(null)
+    setPreview((current) => (current ? { ...current, active: false } : null))
+  }
+  const move = (event: PointerEvent) => {
+    if (!pointer.matches || event.pointerType !== 'mouse') {
+      hide()
+      return
+    }
+    x = event.clientX
+    y = event.clientY
+    position.style.visibility = 'visible'
+    document.documentElement.dataset.customCursor = 'true'
+    selection.select(
+      event.target instanceof Element ? event.target : null,
+      maskActive,
+      x,
+      y,
+    )
+  }
+  const key = (event: KeyboardEvent) => {
+    if (event.key === 'Tab' || event.key === 'Escape') hide()
+  }
+  const scroll = () => {
+    if (document.documentElement.dataset.customCursor) {
+      selection.resetLink()
+      selection.select(document.elementFromPoint(x, y), maskActive, x, y)
+    }
+  }
+
+  refreshRef.current = scroll
+  window.addEventListener('pointerdown', press)
+  window.addEventListener('pointerup', release)
+  window.addEventListener('pointercancel', hide)
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerover', move)
+  document.documentElement.addEventListener('pointerleave', hide)
+  window.addEventListener('blur', hide)
+  window.addEventListener('keydown', key)
+  window.addEventListener('scroll', scroll, true)
+  pointer.addEventListener('change', hide)
+
+  return () => {
+    refreshRef.current = null
+    window.removeEventListener('pointerdown', press)
+    window.removeEventListener('pointerup', release)
+    window.removeEventListener('pointercancel', hide)
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerover', move)
+    document.documentElement.removeEventListener('pointerleave', hide)
+    window.removeEventListener('blur', hide)
+    window.removeEventListener('keydown', key)
+    window.removeEventListener('scroll', scroll, true)
+    pointer.removeEventListener('change', hide)
+    if (maskTimer) window.clearTimeout(maskTimer)
+    delete document.documentElement.dataset.landingMaskExpanded
+    position.style.visibility = 'hidden'
+    delete document.documentElement.dataset.customCursor
+  }
+}
+
+function getCursorAppearance(
+  active: boolean,
+  maskExpanded: boolean,
+  linkWidth: number | null,
+  reducedMotion: boolean,
+  pathname: string,
+) {
+  const style = {
+    scale: maskExpanded ? 1 : undefined,
+    width: active ? 400 : maskExpanded ? 350 : (linkWidth ?? 14),
+    height: active ? 250 : maskExpanded ? 350 : linkWidth ? 2 : 14,
+    borderRadius: active ? 12 : maskExpanded ? 175 : linkWidth ? 1 : 7,
+    transition: reducedMotion
+      ? 'none'
+      : pathname === '/projects'
+        ? 'width 240ms ease, height 240ms ease, border-radius 240ms ease, scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)'
+        : 'width 180ms cubic-bezier(0.23, 1, 0.32, 1), height 180ms cubic-bezier(0.23, 1, 0.32, 1), border-radius 180ms cubic-bezier(0.23, 1, 0.32, 1), scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)',
+  }
+  const shape = active
+    ? 'preview'
+    : !maskExpanded && linkWidth
+      ? 'underline'
+      : 'circle'
+  return { style, shape }
+}
+
 function Cursor({ pathname }: { pathname: string }) {
   const refreshRef = useRef<(() => void) | null>(null)
   const positionRef = useRef<HTMLDivElement>(null)
@@ -22,189 +274,25 @@ function Cursor({ pathname }: { pathname: string }) {
   const [maskExpanded, setMaskExpanded] = useState(false)
   const reducedMotion = usePrefersReducedMotion()
   const active = preview?.active ?? false
+  const appearance = getCursorAppearance(
+    active,
+    maskExpanded,
+    linkWidth,
+    reducedMotion,
+    pathname,
+  )
 
   useEffect(() => {
     const position = positionRef.current
     if (!position || window.self !== window.top) return
-
-    const pointer = window.matchMedia('(hover: hover) and (pointer: fine)')
-    let currentLink: HTMLAnchorElement | null = null
-    let currentRow: Element | null = null
-    let currentGroup: Element | null = null
-    let images: string[] = []
-    let maskTimer: number | null = null
-    let maskActive = false
-    let maskStartedAt = 0
-    let x = 0
-    let y = 0
-
-    const select = (target: Element | null) => {
-      const disabled = target?.closest(':disabled, [aria-disabled="true"]')
-      const row = target?.closest('[data-project-cursor]') ?? null
-      const control = target?.closest(
-        'a[href], button, summary, input, textarea, select, label, [role="button"], [role="link"], [role="option"], [contenteditable="true"]',
-      )
-      const selectable = !disabled && Boolean(control)
-      position.dataset.cursorSelectable =
-        selectable && !maskActive && !row ? 'true' : 'false'
-
-      const underlineScope = maskActive
-        ? null
-        : target?.closest('[data-cursor-link-underline]')
-      const anchor =
-        underlineScope && !disabled
-          ? target?.closest<HTMLAnchorElement>('a[href]')
-          : null
-      const link = anchor?.textContent?.trim() ? anchor : null
-
-      if (link && link !== currentLink) {
-        currentLink = link
-        position.dataset.cursorLink = 'true'
-        const label = link.querySelector<HTMLElement>(
-          '[data-cursor-link-label]',
-        )
-        const linkRect = link.getBoundingClientRect()
-        const labelRect = label?.getBoundingClientRect() ?? linkRect
-        const width = Math.max(12, labelRect.width)
-        const centerX = labelRect.left + labelRect.width / 2
-        const bottom = labelRect.bottom
-
-        position.style.transform = `translate3d(${centerX}px, ${bottom + 2}px, 0)`
-        setLinkWidth((current) =>
-          current === width ? current : Math.round(width * 100) / 100,
-        )
-      } else if (!link) {
-        currentLink = null
-        delete position.dataset.cursorLink
-        position.style.transform = `translate3d(${x}px, ${y}px, 0)`
-        setLinkWidth(null)
-      }
-
-      if (row === currentRow) return
-      currentRow = row
-      const group = row?.closest('[data-project-images]')
-      if (!row || !group) {
-        setPreview((current) =>
-          current ? { ...current, active: false } : null,
-        )
-        return
-      }
-      if (group !== currentGroup) {
-        images = JSON.parse(group.getAttribute('data-project-images') ?? '[]')
-        currentGroup = group
-      }
-      setPreview({
-        active: true,
-        images,
-        index: Number(row.getAttribute('data-project-cursor')),
-      })
-    }
-
-    const collapseMask = () => {
-      maskActive = false
-      delete document.documentElement.dataset.landingMaskExpanded
-      setMaskExpanded(false)
-      maskTimer = null
-      select(document.elementFromPoint(x, y))
-    }
-    const cancelMask = () => {
-      if (maskTimer) window.clearTimeout(maskTimer)
-      if (maskActive) collapseMask()
-    }
-    const release = () => {
-      delete position.dataset.cursorPressed
-      if (!maskActive) return
-      if (maskTimer) window.clearTimeout(maskTimer)
-      const remaining = Math.max(0, 120 - (performance.now() - maskStartedAt))
-      if (remaining === 0) collapseMask()
-      else maskTimer = window.setTimeout(collapseMask, remaining)
-    }
-    const press = (event: PointerEvent) => {
-      move(event)
-      if (pointer.matches && event.pointerType === 'mouse') {
-        const onLandingPage =
-          event.target instanceof Element &&
-          Boolean(event.target.closest('[data-landing-page]')) &&
-          !event.target.closest('[data-landing-page] footer a[href]')
-        if (onLandingPage && !reducedMotion) {
-          if (maskTimer) window.clearTimeout(maskTimer)
-          maskActive = true
-          maskStartedAt = performance.now()
-          document.documentElement.dataset.landingMaskExpanded = 'true'
-          currentLink = null
-          delete position.dataset.cursorLink
-          position.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`
-          setLinkWidth(null)
-          setMaskExpanded(true)
-        } else if (
-          !(event.target instanceof Element) ||
-          !event.target.closest('[data-project-cursor]')
-        ) {
-          position.dataset.cursorPressed = 'true'
-        }
-      }
-    }
-    const hide = () => {
-      delete position.dataset.cursorPressed
-      cancelMask()
-      position.style.visibility = 'hidden'
-      delete document.documentElement.dataset.customCursor
-      delete position.dataset.cursorLink
-      currentLink = null
-      currentRow = null
-      setLinkWidth(null)
-      setPreview((current) => (current ? { ...current, active: false } : null))
-    }
-    const move = (event: PointerEvent) => {
-      if (!pointer.matches || event.pointerType !== 'mouse') {
-        hide()
-        return
-      }
-      x = event.clientX
-      y = event.clientY
-      position.style.visibility = 'visible'
-      document.documentElement.dataset.customCursor = 'true'
-      select(event.target instanceof Element ? event.target : null)
-    }
-    const key = (event: KeyboardEvent) => {
-      if (event.key === 'Tab' || event.key === 'Escape') hide()
-    }
-    const scroll = () => {
-      if (document.documentElement.dataset.customCursor) {
-        currentLink = null
-        select(document.elementFromPoint(x, y))
-      }
-    }
-
-    refreshRef.current = scroll
-    window.addEventListener('pointerdown', press)
-    window.addEventListener('pointerup', release)
-    window.addEventListener('pointercancel', hide)
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerover', move)
-    document.documentElement.addEventListener('pointerleave', hide)
-    window.addEventListener('blur', hide)
-    window.addEventListener('keydown', key)
-    window.addEventListener('scroll', scroll, true)
-    pointer.addEventListener('change', hide)
-
-    return () => {
-      refreshRef.current = null
-      window.removeEventListener('pointerdown', press)
-      window.removeEventListener('pointerup', release)
-      window.removeEventListener('pointercancel', hide)
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerover', move)
-      document.documentElement.removeEventListener('pointerleave', hide)
-      window.removeEventListener('blur', hide)
-      window.removeEventListener('keydown', key)
-      window.removeEventListener('scroll', scroll, true)
-      pointer.removeEventListener('change', hide)
-      if (maskTimer) window.clearTimeout(maskTimer)
-      delete document.documentElement.dataset.landingMaskExpanded
-      position.style.visibility = 'hidden'
-      delete document.documentElement.dataset.customCursor
-    }
+    return subscribeToCursorInteractions({
+      position,
+      refreshRef,
+      reducedMotion,
+      setLinkWidth,
+      setPreview,
+      setMaskExpanded,
+    })
   }, [reducedMotion])
 
   useEffect(() => {
@@ -234,27 +322,9 @@ function Cursor({ pathname }: { pathname: string }) {
     >
       <div
         data-project-preview={active ? '' : undefined}
-        data-cursor-shape={
-          active
-            ? 'preview'
-            : maskExpanded
-              ? 'circle'
-              : linkWidth
-                ? 'underline'
-                : 'circle'
-        }
+        data-cursor-shape={appearance.shape}
         className="relative -translate-x-1/2 -translate-y-1/2 overflow-hidden [[data-cursor-pressed=true]_&]:scale-[0.88] [[data-cursor-pressed=true]_&]:[--cursor-scale-duration:100ms] [[data-cursor-selectable=true]:not([data-cursor-pressed=true])_&[data-cursor-shape=circle]]:scale-[1.45] [[data-cursor-selectable=true][data-cursor-pressed=true]_&[data-cursor-shape=circle]]:scale-[1.15]"
-        style={{
-          scale: maskExpanded ? 1 : undefined,
-          width: active ? 400 : maskExpanded ? 350 : (linkWidth ?? 14),
-          height: active ? 250 : maskExpanded ? 350 : linkWidth ? 2 : 14,
-          borderRadius: active ? 12 : maskExpanded ? 175 : linkWidth ? 1 : 7,
-          transition: reducedMotion
-            ? 'none'
-            : pathname === '/projects'
-              ? 'width 240ms ease, height 240ms ease, border-radius 240ms ease, scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)'
-              : 'width 180ms cubic-bezier(0.23, 1, 0.32, 1), height 180ms cubic-bezier(0.23, 1, 0.32, 1), border-radius 180ms cubic-bezier(0.23, 1, 0.32, 1), scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)',
-        }}
+        style={appearance.style}
       >
         <span
           className="absolute inset-0 rounded-full backdrop-invert"
