@@ -11,20 +11,22 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { LayoutGroup, MotionConfig, motion } from 'motion/react'
 import { useReviewCollection } from '@/components/review-collection-provider'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Command as CommandIcon } from 'lucide-react'
 import { AnimatedBackground } from '@/components/ui/animated-background'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
-import {
-  type PagePreview,
-  PagePreviewTooltip,
-} from '@/components/ui/page-preview-tooltip'
+import type { PagePreview } from '@/components/ui/page-preview-tooltip'
 import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import { cn } from '@/lib/utils'
 
 const MotionLink = motion.create(Link)
 const CommandMenu = dynamic(() =>
   import('@/components/command-menu').then((module) => module.CommandMenu),
+)
+const PagePreviewTooltip = dynamic(() =>
+  import('@/components/ui/page-preview-tooltip').then(
+    (module) => module.PagePreviewTooltip,
+  ),
 )
 const reviewOptions = [
   { id: 'hardware', label: 'Hardware' },
@@ -51,17 +53,41 @@ function getActivePageId(pathname: string) {
   return 'professional'
 }
 
+function revealNavSelection(nav: HTMLElement, activeItemId: string) {
+  const selected = nav.querySelector<HTMLElement>(
+    `[data-id="${activeItemId}"]`,
+  )
+  if (!selected) return
+  nav.scrollTo({
+    left:
+      nav.scrollWidth > nav.clientWidth
+        ? selected.offsetLeft - (nav.clientWidth - selected.offsetWidth) / 2
+        : 0,
+    behavior: 'instant',
+  })
+}
+
 export function Footer({ className }: { className?: string }) {
   const pathname = usePathname()
+  const router = useRouter()
   const activePageId = getActivePageId(pathname)
   const { collection, setCollection } = useReviewCollection()
+  const [hasHydrated, setHasHydrated] = useState(false)
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setHasHydrated(true))
+    return () => cancelAnimationFrame(frame)
+  }, [])
   const reviewsExpanded = activePageId === 'reviews'
   const activeItemId = reviewsExpanded ? collection : activePageId
   const [isCommandMenuOpen, setIsCommandMenuOpen] = useState(false)
   const [hasOpenedCommandMenu, setHasOpenedCommandMenu] = useState(false)
+  const [hasOpenedPagePreview, setHasOpenedPagePreview] = useState(false)
   const [activePagePreview, setActivePagePreview] =
     useState<ActivePagePreview | null>(null)
   const [pagePreviewX, setPagePreviewX] = useState(0)
+  const [animatePagePreviewPosition, setAnimatePagePreviewPosition] =
+    useState(false)
+  const pagePreviewSessionRef = useRef<string | null>(null)
   const pagesNavRef = useRef<HTMLElement | null>(null)
   const pagePreviewCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -95,6 +121,7 @@ export function Footer({ className }: { className?: string }) {
   }, [])
 
   const schedulePagePreviewClose = useCallback(() => {
+    pagePreviewSessionRef.current = null
     cancelPagePreviewClose()
     pagePreviewCloseTimerRef.current = setTimeout(() => {
       setActivePagePreview(null)
@@ -105,19 +132,7 @@ export function Footer({ className }: { className?: string }) {
   useLayoutEffect(() => {
     const nav = pagesNavRef.current
     if (!nav) return
-    const revealSelection = () => {
-      const selected = nav.querySelector<HTMLElement>(
-        `[data-id="${activeItemId}"]`,
-      )
-      if (!selected) return
-      nav.scrollTo({
-        left:
-          nav.scrollWidth > nav.clientWidth
-            ? selected.offsetLeft - (nav.clientWidth - selected.offsetWidth) / 2
-            : 0,
-        behavior: 'instant',
-      })
-    }
+    const revealSelection = () => revealNavSelection(nav, activeItemId)
     revealSelection()
     const observer = new ResizeObserver(revealSelection)
     observer.observe(nav)
@@ -131,13 +146,18 @@ export function Footer({ className }: { className?: string }) {
       if (!navRect) return
 
       const targetRect = target.getBoundingClientRect()
+      router.prefetch(preview.href)
+      setAnimatePagePreviewPosition(pagePreviewSessionRef.current === pathname)
+      pagePreviewSessionRef.current = pathname
+      setHasOpenedPagePreview(true)
       setPagePreviewX(targetRect.left - navRect.left + targetRect.width / 2)
       setActivePagePreview({ pathname, preview })
     },
-    [cancelPagePreviewClose, pathname],
+    [cancelPagePreviewClose, pathname, router],
   )
 
   const clearPagePreviewSelection = useCallback(() => {
+    pagePreviewSessionRef.current = null
     cancelPagePreviewClose()
     setActivePagePreview(null)
 
@@ -238,8 +258,9 @@ export function Footer({ className }: { className?: string }) {
                   onMouseLeave={schedulePagePreviewClose}
                   className="scrollbar-hidden relative flex min-w-0 items-center overflow-x-auto rounded-full bg-black/[0.035] p-0.5 sm:overflow-visible dark:bg-white/[0.06]"
                 >
-                  {!reviewsExpanded && (
+                  {!reviewsExpanded && hasOpenedPagePreview && (
                     <PagePreviewTooltip
+                      animatePosition={animatePagePreviewPosition}
                       preview={pagePreview}
                       x={pagePreviewX}
                       onMouseEnter={cancelPagePreviewClose}
@@ -248,7 +269,9 @@ export function Footer({ className }: { className?: string }) {
                     />
                   )}
                   <AnimatedBackground
-                    value={activeItemId}
+                    value={
+                      reviewsExpanded && !hasHydrated ? null : activeItemId
+                    }
                     className="rounded-full bg-white shadow-sm dark:bg-zinc-950"
                     transition={{
                       type: 'spring',
@@ -264,19 +287,24 @@ export function Footer({ className }: { className?: string }) {
                           layout="position"
                           key={link.id}
                           href={link.href}
+                          prefetch={false}
                           data-id={link.id}
                           aria-current={
                             activePageId === link.id ? 'page' : undefined
                           }
-                          onMouseEnter={(event) =>
-                            showPagePreview(event.currentTarget, link)
-                          }
-                          onFocus={(event) =>
-                            showPagePreview(event.currentTarget, link)
-                          }
+                          onPointerEnter={(event) => {
+                            if (event.pointerType === 'mouse') {
+                              showPagePreview(event.currentTarget, link)
+                            }
+                          }}
+                          onFocus={(event) => {
+                            if (event.currentTarget.matches(':focus-visible')) {
+                              showPagePreview(event.currentTarget, link)
+                            }
+                          }}
                           onBlur={schedulePagePreviewClose}
                           onClick={(event) => handlePageLinkClick(event, link)}
-                          className="shrink-0 rounded-full px-2.5 py-1.5 whitespace-nowrap text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] data-[checked=true]:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50"
+                          className="shrink-0 rounded-full px-2.5 py-1.5 whitespace-nowrap text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] data-[checked=true]:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50"
                         >
                           {link.label}
                         </MotionLink>
@@ -295,7 +323,7 @@ export function Footer({ className }: { className?: string }) {
                                 window.scrollTo({ top: 0, behavior: 'instant' })
                               }}
                               className={cn(
-                                'shrink-0 rounded-full px-2.5 py-1.5 whitespace-nowrap text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] data-[checked=true]:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50',
+                                'shrink-0 rounded-full px-2.5 py-1.5 whitespace-nowrap text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] data-[checked=true]:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-[checked=true]:text-zinc-50',
                                 id === 'hardware' &&
                                   'ml-4 before:absolute before:top-1/2 before:-left-2 before:h-4 before:w-px before:-translate-y-1/2 before:bg-zinc-400 dark:before:bg-zinc-500',
                               )}

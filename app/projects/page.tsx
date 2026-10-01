@@ -12,19 +12,19 @@ export const metadata: Metadata = {
 const projects: ShowcaseProject[] = [
   {
     title: 'Amarula',
-    category: 'Web design',
+    category: 'Agentic DAW Preview',
     imageSrc: '/projects/placeholder-01.svg',
     imageAlt: 'Placeholder website interface in sage green',
   },
   {
     title: 'Rooibos',
-    category: 'Motion & interaction',
+    category: 'LiDAR Appearance Analyzer',
     imageSrc: '/projects/placeholder-02.svg',
     imageAlt: 'Placeholder website interface in warm neutral colors',
   },
   {
     title: 'Muta',
-    category: 'Digital experience',
+    category: 'Coming Soon',
     imageSrc: '/projects/placeholder-03.svg',
     imageAlt: 'Placeholder website interface in soft lavender',
   },

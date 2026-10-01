@@ -236,8 +236,8 @@ export const hardwareProducts = [
     name: 'SteelSeries Apex Pro TKL',
     category: 'Keyboard',
     brand: 'SteelSeries',
-    image: '/reviews/apex-pro-tkl-side.png',
-    alt: 'Side view of the black SteelSeries Apex Pro TKL with wrist rest',
+    image: '/reviews/apex-pro-tkl-cutout.png',
+    alt: 'Top view of the black SteelSeries Apex Pro TKL with RGB lighting',
     description: '',
     details: [],
     url: 'https://steelseries.com/gaming-keyboards/apex-pro-2023',
@@ -291,12 +291,12 @@ export const hardwareProducts = [
 export const softwareProducts = [
   {
     id: 'dia',
-    name: 'Dia Browser',
+    name: 'Dia',
     category: 'Browser',
     platform: 'desktop',
     brand: 'The Browser Company',
     image: '/reviews/apps/dia.webp',
-    alt: 'Dia Browser app icon',
+    alt: 'Dia app icon',
     description:
       'An AI browser with contextual assistance for the tabs you\u2019re working in.',
     details: [
@@ -360,12 +360,12 @@ export const softwareProducts = [
   },
   {
     id: 'zed',
-    name: 'Zed IDE',
+    name: 'Zed',
     category: 'Code editor',
     platform: 'desktop',
     brand: 'Zed Industries',
     image: '/reviews/apps/zed.webp',
-    alt: 'Zed IDE app icon',
+    alt: 'Zed app icon',
     description: 'A code editor with a focus on performance and collaboration.',
     details: [
       ['Category', 'Code editor'],
@@ -393,12 +393,12 @@ export const softwareProducts = [
   },
   {
     id: 'warp',
-    name: 'Warp Terminal',
+    name: 'Warp',
     category: 'Terminal',
     platform: 'desktop',
     brand: 'Warp',
     image: '/reviews/apps/warp.webp',
-    alt: 'Warp Terminal app icon',
+    alt: 'Warp app icon',
     description:
       'A terminal with command blocks and AI assistance for working at the command line.',
     details: [
@@ -461,13 +461,13 @@ export const softwareProducts = [
   },
   {
     id: 'helium',
-    published: false,
-    name: 'Helium Browser',
+    published: true,
+    name: 'Helium',
     category: 'Browser',
     platform: 'desktop',
     brand: 'imput',
-    image: '/reviews/helium-icon.webp',
-    alt: 'Helium Browser app icon',
+    image: '/reviews/apps/helium.png',
+    alt: 'Helium app icon',
     description: 'A privacy-focused browser with Chromium extension support.',
     details: [
       ['Category', 'Browser'],
@@ -478,12 +478,12 @@ export const softwareProducts = [
   },
   {
     id: 'zen',
-    name: 'Zen Browser',
+    name: 'Zen',
     category: 'Browser',
     platform: 'desktop',
     brand: 'Zen',
     image: '/reviews/apps/zen.webp',
-    alt: 'Zen Browser app icon',
+    alt: 'Zen app icon',
     description:
       'A customizable browser with Workspaces, Compact Mode, and Split View.',
     details: [
@@ -491,6 +491,32 @@ export const softwareProducts = [
       ['Features', 'Workspaces & split view'],
     ],
     url: 'https://zen-browser.app',
+    kind: 'software',
+  },
+  {
+    id: 'figma',
+    name: 'Figma',
+    category: 'Design tool',
+    platform: 'both',
+    brand: 'Figma',
+    image: '/reviews/apps/figma.png',
+    alt: 'Figma app icon',
+    description: 'A collaborative design tool for interfaces and prototypes.',
+    details: [['Category', 'Design tool']],
+    url: 'https://www.figma.com',
+    kind: 'software',
+  },
+  {
+    id: 't3-code',
+    name: 'T3 Code',
+    category: 'AI coding agent',
+    platform: 'desktop',
+    brand: 'T3',
+    image: '/reviews/apps/t3-code.png',
+    alt: 'T3 Code app icon',
+    description: 'A coding agent interface for working across local projects.',
+    details: [['Category', 'AI coding agent']],
+    url: 'https://t3.codes',
     kind: 'software',
   },
   {

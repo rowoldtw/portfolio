@@ -2,6 +2,14 @@ import { v } from 'convex/values'
 import { internalMutation } from './_generated/server'
 import { hardwareProducts, softwareProducts, albums } from './seedData'
 
+const renamedSoftwareIds = new Set(['dia', 'zed', 'warp', 'zen', 'helium'])
+const currentlyUsingIds = new Set([
+  'finalmouse-ulx',
+  'wooting-60he',
+  'dia',
+  'fl-studio',
+])
+
 export const reviews = internalMutation({
   args: {},
   returns: v.object({ inserted: v.number(), skipped: v.number() }),
@@ -19,15 +27,31 @@ export const reviews = internalMutation({
           .withIndex('by_slug', (q) => q.eq('slug', product.id))
           .unique()
         if (existing) {
+          if (currentlyUsingIds.has(product.id) && !existing.currentlyUsing) {
+            await ctx.db.patch(existing._id, { currentlyUsing: true })
+          }
+          if (
+            collection === 'hardware' &&
+            product.id === 'steelseries-apex-pro-tkl' &&
+            (existing.image !== product.image || existing.alt !== product.alt)
+          ) {
+            await ctx.db.patch(existing._id, {
+              image: product.image,
+              alt: product.alt,
+            })
+          }
           if (collection === 'software' && 'platform' in product) {
             const imageChanged =
               existing.image !== product.image || existing.alt !== product.alt
             const publicationChanged =
               'published' in product && product.published !== existing.published
+            const nameChanged =
+              renamedSoftwareIds.has(product.id) && existing.name !== product.name
             if (
               existing.platform !== product.platform ||
               imageChanged ||
-              publicationChanged
+              publicationChanged ||
+              nameChanged
             ) {
               await ctx.db.patch(existing._id, {
                 ...(existing.platform !== product.platform
@@ -37,6 +61,7 @@ export const reviews = internalMutation({
                   ? { image: product.image, alt: product.alt }
                   : {}),
                 ...(publicationChanged ? { published: product.published } : {}),
+                ...(nameChanged ? { name: product.name } : {}),
               })
             }
           }
@@ -57,6 +82,7 @@ export const reviews = internalMutation({
           alt: product.alt,
           url: product.url,
           published: !('published' in product && product.published === false),
+          ...(currentlyUsingIds.has(product.id) ? { currentlyUsing: true } : {}),
           accessory: [
             'Mousepad',
             'Phone case',

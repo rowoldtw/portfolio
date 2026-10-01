@@ -17,7 +17,21 @@ import {
 export type ReviewProduct =
   import('@/convex/_generated/dataModel').Doc<'reviews'>
 
-export function ReviewCard({ product }: { product: ReviewProduct }) {
+function CurrentUseBadge() {
+  return (
+    <span className="pointer-events-none absolute top-3 left-3 z-10 inline-flex items-center rounded-lg bg-[#F5F4F3] px-2.5 py-1 text-[10px] font-medium tracking-wide text-zinc-900 dark:bg-[#121212] dark:text-zinc-100">
+      Currently using
+    </span>
+  )
+}
+
+export function ReviewCard({
+  product,
+  priority = false,
+}: {
+  product: ReviewProduct
+  priority?: boolean
+}) {
   const isAlbum = product.collection === 'albums'
   const subtitle = isAlbum ? product.brand : product.category
   const imageClass = cn(
@@ -25,29 +39,39 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
     isAlbum ? 'aspect-square object-cover' : 'aspect-[16/9] object-contain',
     !isAlbum && 'p-5',
   )
-  const renderImage = () =>
-    product.collection === 'software' ? (
-      <div className="flex aspect-[16/9] w-full items-center justify-center rounded-lg bg-white dark:bg-[#202020]">
+  const renderImage = () => (
+    <div className="relative">
+      {product.collection === 'software' ? (
+        <div className="flex aspect-[16/9] w-full items-center justify-center rounded-lg bg-white dark:bg-[#202020]">
+          <MorphingDialogImage
+            src={product.image}
+            alt={product.alt}
+            width={96}
+            height={96}
+            sizes="96px"
+            priority={priority}
+            className="size-24 shrink-0 rounded-[22%] object-contain"
+          />
+        </div>
+      ) : (
         <MorphingDialogImage
           src={product.image}
           alt={product.alt}
-          className="size-24 shrink-0 rounded-[22%] object-contain"
+          width={800}
+          height={isAlbum ? 800 : 450}
+          priority={priority}
+          className={imageClass}
         />
-      </div>
-    ) : (
-      <MorphingDialogImage
-        src={product.image}
-        alt={product.alt}
-        className={imageClass}
-      />
-    )
+      )}
+      {product.currentlyUsing && <CurrentUseBadge />}
+    </div>
+  )
 
   return (
     <MorphingDialog
       transition={{ type: 'spring', stiffness: 400, damping: 36 }}
     >
       <MorphingDialogTrigger
-        label={`Read about ${product.name}`}
         style={{ borderRadius: 16 }}
         className="bg-[#F5F4F3] p-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-4 dark:bg-[#121212]"
       >
@@ -57,12 +81,13 @@ export function ReviewCard({ product }: { product: ReviewProduct }) {
             <MorphingDialogTitle className="text-sm font-medium tracking-tight">
               {product.name}
             </MorphingDialogTitle>
-            <MorphingDialogSubtitle className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <MorphingDialogSubtitle className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
               {subtitle}
             </MorphingDialogSubtitle>
           </div>
           <Plus aria-hidden="true" className="size-4 shrink-0 text-zinc-500" />
         </div>
+        <span className="sr-only">Read review</span>
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent

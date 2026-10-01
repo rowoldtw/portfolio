@@ -213,8 +213,61 @@ html[data-landing-mask-expanded='true'] [data-landing-page] {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  html[data-show-intro-preloader='true'] [data-landing-heading] {
+    visibility: hidden;
+  }
+
+  html[data-show-intro-preloader='false'] [data-landing-heading] > span {
+    animation: landing-heading-enter 375ms ease-out both;
+  }
+
+  html[data-show-intro-preloader='false'] [data-landing-heading] > span + span {
+    animation-delay: 80ms;
+  }
+
+  @keyframes landing-heading-enter {
+    from {
+      opacity: 0;
+      filter: blur(6px);
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+    }
+  }
+
   .page-enter {
     animation: page-enter 320ms ease-out;
+  }
+
+  .review-section-enter,
+  .review-item-enter {
+    animation: review-content-enter 260ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+
+  .review-section-enter {
+    animation-delay: 45ms;
+  }
+
+  @keyframes review-content-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-section-enter,
+  .review-item-enter {
+    animation: page-enter 120ms ease-out both;
+    animation-delay: 0ms !important;
   }
 }
 
@@ -224,28 +277,12 @@ html:has([data-reviews-page]) {
 html.dark:has([data-reviews-page]) {
   --background: #080808;
 }
-@media (prefers-reduced-motion: no-preference) {
-  body:not(:has([data-reviews-page])) .site-frame,
-  body:not(:has([data-reviews-page])) [data-site-navbar-frame] {
-    transition: transform 280ms cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  @starting-style {
-    body:not(:has([data-reviews-page])) .site-frame {
-      transform: scale(1.12);
-    }
-
-    body:not(:has([data-reviews-page])) [data-site-navbar-frame] {
-      transform: translateY(calc(100% + 1rem));
-    }
-  }
-}
-
 body:has([data-reviews-page]) .site-frame {
   transform: scale(1.12);
 }
 
 [data-site-navbar-shell] {
+  touch-action: manipulation;
   --site-navbar-frame: #fff;
   padding: 0.125rem 0.125rem max(0.25rem, env(safe-area-inset-bottom));
 }
@@ -324,15 +361,6 @@ html.dark body:has([data-reviews-page]) [data-site-navbar] {
   inset: 0;
   z-index: 1;
   opacity: 0.55;
-  background:
-    linear-gradient(to bottom, var(--background), transparent) top / 100% 2.5rem
-      no-repeat,
-    linear-gradient(to top, var(--background), transparent) bottom / 100% 2.5rem
-      no-repeat,
-    linear-gradient(to right, var(--background), transparent) left / 2.5rem 100%
-      no-repeat,
-    linear-gradient(to left, var(--background), transparent) right / 2.5rem 100%
-      no-repeat;
 }
 
 html:has([data-landing-page]),

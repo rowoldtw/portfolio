@@ -17,9 +17,12 @@ import {
   Variant,
 } from 'motion/react'
 import { createPortal } from 'react-dom'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { XIcon } from 'lucide-react'
 import useClickOutside from '@/hooks/useClickOutside'
+
+const MotionImage = motion.create(Image)
 
 export type MorphingDialogContextType = {
   isOpen: boolean
@@ -137,7 +140,7 @@ function MorphingDialogTrigger({
       aria-haspopup="dialog"
       aria-expanded={isOpen}
       aria-controls={`motion-ui-morphing-dialog-content-${uniqueId}`}
-      aria-label={label ?? 'Open details'}
+      aria-label={label}
     >
       {children}
     </motion.div>
@@ -369,6 +372,10 @@ export type MorphingDialogImageProps = {
   alt: string
   className?: string
   style?: React.CSSProperties
+  width?: number
+  height?: number
+  sizes?: string
+  priority?: boolean
 }
 
 function MorphingDialogImage({
@@ -377,8 +384,12 @@ function MorphingDialogImage({
   alt,
   className,
   style,
+  width = 800,
+  height = 450,
+  sizes = '(max-width: 639px) calc(100vw - 56px), (max-width: 1023px) 45vw, 320px',
+  priority = false,
 }: MorphingDialogImageProps) {
-  const { uniqueId } = useMorphingDialog()
+  const { uniqueId, isOpen } = useMorphingDialog()
 
   if (darkSrc) {
     return (
@@ -406,9 +417,19 @@ function MorphingDialogImage({
   }
 
   return (
-    <motion.img
+    <MotionImage
       src={src}
       alt={alt}
+      width={width}
+      height={height}
+      sizes={
+        isOpen && sizes !== '96px'
+          ? '(max-width: 511px) calc(100vw - 48px), 496px'
+          : sizes
+      }
+      loading={isOpen || priority ? 'eager' : 'lazy'}
+      fetchPriority={priority ? 'high' : undefined}
+      unoptimized={!src.startsWith('/')}
       className={cn(className)}
       layoutId={`dialog-img-${uniqueId}`}
       style={style}

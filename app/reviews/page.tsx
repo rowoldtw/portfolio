@@ -3,13 +3,18 @@ import { fetchQuery } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
 import { ReviewsCatalog } from '@/components/reviews-catalog'
 import { ReviewsConvexProvider } from '@/components/convex-provider'
+import type { ReviewCollection } from '@/components/review-collection-provider'
 
 export const metadata: Metadata = {
   title: 'Reviews',
   description: 'Personal reviews of hardware, software, and albums.',
 }
 
-export default async function ReviewsPage() {
+export default async function ReviewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ collection?: string | string[] }>
+}) {
   if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
     return (
       <main data-reviews-page="" className="min-h-dvh px-5 pt-28 text-center">
@@ -20,6 +25,9 @@ export default async function ReviewsPage() {
       </main>
     )
   }
+  const { collection } = await searchParams
+  const initialCollection: ReviewCollection =
+    collection === 'software' || collection === 'albums' ? collection : 'hardware'
   const [hardware, software, albums] = await Promise.all(
     (['hardware', 'software', 'albums'] as const).map((collection) =>
       fetchQuery(api.reviews.list, {
@@ -30,7 +38,10 @@ export default async function ReviewsPage() {
   )
   return (
     <ReviewsConvexProvider>
-      <ReviewsCatalog initialPages={{ hardware, software, albums }} />
+      <ReviewsCatalog
+        initialPages={{ hardware, software, albums }}
+        initialCollection={initialCollection}
+      />
     </ReviewsConvexProvider>
   )
 }
