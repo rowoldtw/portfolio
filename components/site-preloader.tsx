@@ -111,6 +111,8 @@ function PreloaderCurtain({
 }) {
   return (
     <motion.div
+      role="main"
+      aria-label="Portfolio introduction"
       data-site-preloader=""
       data-cursor-exclude=""
       className="fixed inset-0 z-[90] flex items-center justify-center bg-white text-zinc-950 dark:bg-[#080808] dark:text-zinc-100"

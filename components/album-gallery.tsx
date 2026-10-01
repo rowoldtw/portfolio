@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
-import { useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import type { ReviewProduct } from '@/components/review-card'
 
 const ArtGallery = dynamic(() =>
@@ -16,6 +16,7 @@ export function AlbumGallery({
   albums: ReviewProduct[]
   active: boolean
 }) {
+  const fadeId = useId()
   // Keep the atlas inputs stable when Convex replaces initial data with identical live data.
   const assetKey = JSON.stringify(
     albums.map((album) => [album.image, album.name, album.brand]),
@@ -88,7 +89,45 @@ export function AlbumGallery({
           className="h-full w-full"
         />
       </div>
-      <div aria-hidden="true" data-album-scroll-fade="" />
+      <svg
+        aria-hidden="true"
+        data-album-scroll-fade=""
+        width="100%"
+        height="100%"
+      >
+        <defs>
+          <filter
+            id={`${fadeId}-blur`}
+            filterUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
+          >
+            <feGaussianBlur stdDeviation="12" />
+          </filter>
+          <mask id={`${fadeId}-mask`}>
+            <rect width="100%" height="100%" fill="white" />
+            <rect
+              x="20"
+              y="20"
+              rx="20"
+              style={{
+                width: 'calc(100% - 40px)',
+                height: 'calc(100% - 40px)',
+              }}
+              fill="black"
+              filter={`url(#${fadeId}-blur)`}
+            />
+          </mask>
+        </defs>
+        <rect
+          width="100%"
+          height="100%"
+          fill="var(--background)"
+          mask={`url(#${fadeId}-mask)`}
+        />
+      </svg>
       <p
         className="pointer-events-none absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-[2rem] bg-[#f4f4f4]/50 px-4 py-2 text-center text-xs font-medium text-zinc-950 backdrop-blur-xl dark:bg-[#181818]/75 dark:text-zinc-50"
         aria-live="polite"

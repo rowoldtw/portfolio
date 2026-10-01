@@ -9,12 +9,16 @@ import {
   Play,
   Sun,
   Star,
+  Cpu,
+  AppWindow,
+  Disc3,
 } from 'lucide-react'
 import { PRELOADER_REPLAY_EVENT } from '@/components/site-preloader'
 import { useTheme } from '@/components/theme-provider'
 import { animateThemeChange } from '@/components/theme-transition'
 import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import { SkiperCommandMenu } from '@/components/ui/skiper-command-menu'
+import { useReviewCollection } from '@/components/review-collection-provider'
 
 const PAGE_COMMANDS = [
   {
@@ -37,6 +41,12 @@ const PAGE_COMMANDS = [
   },
 ] as const
 
+const REVIEW_COMMANDS = [
+  { id: 'hardware', label: 'Hardware', icon: Cpu },
+  { id: 'software', label: 'Software', icon: AppWindow },
+  { id: 'albums', label: 'Albums', icon: Disc3 },
+] as const
+
 type CommandMenuProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -46,6 +56,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { setTheme } = useTheme()
+  const { setCollection } = useReviewCollection()
   const prefersReducedMotion = usePrefersReducedMotion()
 
   const goToPage = (href: string) => {
@@ -75,6 +86,20 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
       icon: <item.icon />,
       disabled: item.disabled,
       onSelect: () => goToPage(item.href),
+    })),
+    ...REVIEW_COMMANDS.map((item) => ({
+      id: `/reviews?collection=${item.id}`,
+      label: item.label,
+      group: 'Reviews',
+      description: `Open ${item.label} reviews`,
+      icon: <item.icon />,
+      onSelect: () => {
+        setCollection(item.id)
+        if (pathname !== '/reviews') {
+          router.push(`/reviews?collection=${item.id}`)
+        }
+        onOpenChange(false)
+      },
     })),
     ...(
       [

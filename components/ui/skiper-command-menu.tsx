@@ -156,7 +156,7 @@ export function SkiperCommandMenu({
                               setSelectedCommandId(command.id)
                             }}
                             aria-description={command.description}
-                            className="group relative isolate flex cursor-pointer items-center gap-2.5 rounded-2xl px-2.5 py-2 text-sm font-medium text-zinc-700 outline-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-35 data-[selected=true]:text-zinc-950 dark:text-zinc-300 dark:data-[selected=true]:text-white"
+                            className="group relative flex cursor-pointer items-center gap-2.5 rounded-2xl px-2.5 py-2 text-sm font-medium text-zinc-700 outline-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-35 data-[selected=true]:text-zinc-950 dark:text-zinc-300 dark:data-[selected=true]:text-white"
                           >
                             {selectedCommandId === command.id && (
                               <motion.div
@@ -170,17 +170,17 @@ export function SkiperCommandMenu({
                                       : 0,
                                   ease: [0.23, 1, 0.32, 1],
                                 }}
-                                className="pointer-events-none absolute inset-0 -z-10 rounded-2xl bg-[#FCFCFC] dark:bg-[#161616]"
+                                className="pointer-events-none absolute inset-0 z-0 rounded-2xl bg-[#FCFCFC] dark:bg-[#161616]"
                               />
                             )}
                             <ArrowRight
                               aria-hidden="true"
-                              className="size-4 shrink-0 text-zinc-500"
+                              className="relative z-10 size-4 shrink-0 text-zinc-500"
                             />
-                            <span className="min-w-0 flex-1 truncate">
+                            <span className="relative z-10 min-w-0 flex-1 truncate">
                               {command.label}
                             </span>
-                            <span className="flex size-6 shrink-0 items-center justify-center text-zinc-500 [&_svg]:size-4">
+                            <span className="relative z-10 flex size-6 shrink-0 items-center justify-center text-zinc-500 [&_svg]:size-4">
                               {command.icon}
                             </span>
                           </Command.Item>

@@ -249,7 +249,10 @@ export function ReviewsCatalog({
                             animationDelay: `${Math.min(itemIndex, 10) * 45}ms`,
                           }}
                         >
-                          <ReviewCard product={product} />
+                          <ReviewCard
+                            product={product}
+                            priority={index + itemIndex === 0}
+                          />
                         </div>
                       ))}
                     </div>

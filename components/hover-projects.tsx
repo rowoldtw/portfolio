@@ -127,6 +127,8 @@ export function HoverProjects({ projects }: { projects: ShowcaseProject[] }) {
                 alt={project.imageAlt}
                 fill
                 sizes="(max-width: 768px) calc(100vw - 48px), 400px"
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : undefined}
                 className="object-cover"
               />
             </div>
