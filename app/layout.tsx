@@ -8,7 +8,7 @@ import { UiPreferencesProvider } from '@/components/ui-preferences-provider'
 import { SitePreloader } from '@/components/site-preloader'
 import { ReviewCollectionProvider } from '@/components/review-collection-provider'
 import { Footer } from './footer'
-import { CustomCursor } from '@/components/ui/custom-cursor'
+import { DesktopCursor } from '@/components/desktop-cursor'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -32,11 +32,13 @@ export function generateMetadata(): Metadata {
 const geist = Geist({
   variable: '--font-geist',
   subsets: ['latin'],
+  preload: false,
 })
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+  preload: false,
 })
 
 const themeInitScript = `
@@ -98,7 +100,7 @@ export default function RootLayout({
           >
             <div className="absolute -top-2.5 -right-2.5 -left-2.5 h-2.5 bg-white dark:bg-[#080808]" />
           </div>
-          <CustomCursor />
+          <DesktopCursor />
           <UiPreferencesProvider>
             <ReviewCollectionProvider>
               <SitePreloader />

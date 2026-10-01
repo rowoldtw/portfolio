@@ -25,18 +25,24 @@ export default function HomePage() {
             aria-label="Footer pages"
             className="flex flex-col items-end gap-2"
           >
-            <Link href="/" className="focus-visible:underline">
+            <Link href="/" prefetch={false} className="focus-visible:underline">
               <span data-cursor-link-label="">Home</span>
             </Link>
-            <Link href="/projects" className="focus-visible:underline">
+            <Link
+              href="/projects"
+              prefetch={false}
+              className="focus-visible:underline"
+            >
               <span data-cursor-link-label="">Projects</span>
             </Link>
-            <Link href="/reviews" className="focus-visible:underline">
+            <Link
+              href="/reviews"
+              prefetch={false}
+              className="focus-visible:underline"
+            >
               <span data-cursor-link-label="">Reviews</span>
             </Link>
-            <span
-              className="cursor-not-allowed text-zinc-400 dark:text-zinc-600"
-            >
+            <span className="cursor-not-allowed text-zinc-400 dark:text-zinc-600">
               Resume
               <span className="sr-only"> (unavailable)</span>
             </span>

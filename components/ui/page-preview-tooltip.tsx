@@ -26,6 +26,7 @@ export type PagePreview = {
 type PagePreviewTooltipProps = {
   preview: PagePreview | null
   x: number
+  animatePosition: boolean
   onMouseEnter?: () => void
   onMouseLeave?: () => void
   onReviewSelect?: (collection: (typeof REVIEW_PREVIEWS)[number]['id']) => void
@@ -34,38 +35,52 @@ type PagePreviewTooltipProps = {
 export function PagePreviewTooltip({
   preview,
   x,
+  animatePosition,
   onMouseEnter,
   onMouseLeave,
   onReviewSelect,
 }: PagePreviewTooltipProps) {
   const [reviewsExpanded, setReviewsExpanded] = useState(false)
+  const [readyReviews, setReadyReviews] = useState<string[]>([])
   const reviewsActive = preview?.id === 'reviews'
+  const reviewsVisible =
+    reviewsActive && readyReviews.length === REVIEW_PREVIEWS.length
 
   return (
     <>
       <motion.div
-        aria-hidden={!reviewsActive}
-        inert={!reviewsActive}
+        aria-hidden={!reviewsVisible}
+        inert={!reviewsVisible}
         className="absolute bottom-full left-0 z-50 origin-bottom pb-5"
-        style={{ pointerEvents: reviewsActive ? 'auto' : 'none' }}
+        style={{ pointerEvents: reviewsVisible ? 'auto' : 'none' }}
         onMouseEnter={onMouseEnter}
         onMouseLeave={() => {
           setReviewsExpanded(false)
           onMouseLeave?.()
         }}
-        initial={false}
+        initial={{ opacity: 0, x }}
         animate={
-          reviewsActive
-            ? { opacity: 1, visibility: 'visible', x, y: 0 }
-            : { opacity: 0, visibility: 'hidden', x, y: 0 }
+          reviewsVisible
+            ? { x, opacity: 1, visibility: 'visible' }
+            : { x, opacity: 0, visibility: 'hidden' }
         }
-        transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
+        transition={{
+          type: 'spring',
+          bounce: 0,
+          duration: 0.2,
+          x: { type: 'spring', bounce: 0, duration: animatePosition ? 0.2 : 0 },
+        }}
       >
         <div className="-translate-x-1/2">
           <ReviewPreviewStack
             expanded={reviewsExpanded}
             onExpand={() => setReviewsExpanded(true)}
             onReviewSelect={onReviewSelect}
+            onReady={(id) =>
+              setReadyReviews((ready) =>
+                ready.includes(id) ? ready : [...ready, id],
+              )
+            }
           />
         </div>
       </motion.div>
@@ -79,6 +94,7 @@ export function PagePreviewTooltip({
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
           x={x}
+          animatePosition={animatePosition}
         />
       ))}
     </>
@@ -93,6 +109,7 @@ function PersistentPagePreview({
   onMouseEnter,
   onMouseLeave,
   x,
+  animatePosition,
 }: {
   id: (typeof PAGE_PREVIEWS)[number]['id']
   active: boolean
@@ -101,26 +118,34 @@ function PersistentPagePreview({
   onMouseEnter?: () => void
   onMouseLeave?: () => void
   x: number
+  animatePosition: boolean
 }) {
+  const [ready, setReady] = useState(false)
+  const visible = active && ready
   return (
     <motion.div
-      aria-hidden={!active}
-      inert={!active}
+      aria-hidden={!visible}
+      inert={!visible}
       className="absolute bottom-full left-0 z-50 origin-bottom pb-5"
-      style={{ pointerEvents: active ? 'auto' : 'none' }}
+      style={{ pointerEvents: visible ? 'auto' : 'none' }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      initial={false}
+      initial={{ opacity: 0, x }}
       animate={
-        active
-          ? { opacity: 1, visibility: 'visible', x, y: 0 }
-          : { opacity: 0, visibility: 'hidden', x, y: 0 }
+        visible
+          ? { x, opacity: 1, visibility: 'visible' }
+          : { x, opacity: 0, visibility: 'hidden' }
       }
-      transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
+      transition={{
+        type: 'spring',
+        bounce: 0,
+        duration: 0.2,
+        x: { type: 'spring', bounce: 0, duration: animatePosition ? 0.2 : 0 },
+      }}
     >
       <div className="group relative aspect-video w-52 -translate-x-1/2 rounded-xl">
         <div className="relative z-10 aspect-video overflow-hidden rounded-xl border-2 border-[#E8E6E3] bg-[#f4f4f4] shadow-xl transition-transform duration-200 group-hover:-translate-y-0.5 dark:border-white/15 dark:bg-[#181818]">
-          <PreviewFrame id={id} />
+          <PreviewFrame id={id} onReady={() => setReady(true)} />
         </div>
         <Link
           href={href}
@@ -136,10 +161,12 @@ function ReviewPreviewStack({
   expanded,
   onExpand,
   onReviewSelect,
+  onReady,
 }: {
   expanded: boolean
   onExpand: () => void
   onReviewSelect?: (collection: (typeof REVIEW_PREVIEWS)[number]['id']) => void
+  onReady: (id: string) => void
 }) {
   return (
     <div className="relative h-[20.5rem] w-56">
@@ -159,7 +186,7 @@ function ReviewPreviewStack({
             onFocus={index === 0 ? onExpand : undefined}
           >
             <div className="relative h-full overflow-hidden rounded-xl border-2 border-[#E8E6E3] bg-[#f4f4f4] shadow-xl transition-transform duration-200 hover:-translate-y-0.5 dark:border-white/15 dark:bg-[#181818]">
-              <PreviewFrame id={item.id} />
+              <PreviewFrame id={item.id} onReady={() => onReady(item.id)} />
               <Link
                 href={`/reviews?collection=${item.id}`}
                 aria-label={`Open ${item.label} reviews`}
@@ -176,10 +203,12 @@ function ReviewPreviewStack({
 
 function PreviewFrame({
   id,
+  onReady,
 }: {
   id:
     | (typeof PAGE_PREVIEWS)[number]['id']
     | (typeof REVIEW_PREVIEWS)[number]['id']
+  onReady: () => void
 }) {
   const { resolvedTheme } = useTheme()
 
@@ -190,6 +219,7 @@ function PreviewFrame({
       width={416}
       height={234}
       unoptimized
+      onLoad={onReady}
       className="block h-full w-full object-cover"
     />
   )
