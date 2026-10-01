@@ -4,8 +4,3 @@ name = "portfolio"
 
 [setup]
 script = ""
-
-[[actions]]
-name = "Run"
-icon = "run"
-command = "pnpm dev"

@@ -13,6 +13,7 @@ import { DesktopCursor } from '@/components/desktop-cursor'
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export function generateMetadata(): Metadata {
@@ -96,9 +97,9 @@ export default function RootLayout({
         <ThemeProvider>
           <div
             aria-hidden="true"
-            className="site-frame pointer-events-none fixed inset-2.5 z-[80] rounded-[24px] shadow-[0_0_0_32px_#fff] dark:shadow-[0_0_0_32px_#080808]"
+            className="site-frame pointer-events-none fixed inset-2.5 top-[calc(0.625rem+env(safe-area-inset-top))] z-[80] rounded-[24px] shadow-[0_0_0_32px_#fff] dark:shadow-[0_0_0_32px_#080808]"
           >
-            <div className="absolute -top-2.5 -right-2.5 -left-2.5 h-2.5 bg-white dark:bg-[#080808]" />
+            <div className="absolute -top-[calc(0.625rem+env(safe-area-inset-top))] -right-2.5 -left-2.5 h-[calc(0.625rem+env(safe-area-inset-top))] bg-white dark:bg-[#080808]" />
           </div>
           <DesktopCursor />
           <UiPreferencesProvider>
