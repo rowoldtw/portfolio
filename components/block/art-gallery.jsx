@@ -3,7 +3,7 @@
 // Adapted from ObsidianUI Art Gallery for the portfolio's album catalog.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useEffectReducedMotion } from '@/lib/effects/shared/webgl-surface'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/components/theme-provider'
 
@@ -296,6 +296,7 @@ function ArtGalleryScene({
 
     const state = {
       isDragging: false,
+      pointerType: 'mouse',
       previousPointer: { x: 0, y: 0 },
       offset: { x: 0, y: 0 },
       targetOffset: { x: 0, y: 0 },
@@ -328,6 +329,7 @@ function ArtGalleryScene({
     }
 
     navigateRef.current = (delta) => {
+      state.pointerType = 'mouse'
       state.targetOffset.x += delta * cellSize
       selectIndex(mod(state.selectedIndex + delta, images.length))
     }
@@ -356,12 +358,16 @@ function ArtGalleryScene({
     container.appendChild(renderer.domElement)
     rendererRef.current = renderer
 
-    const lerpFactor = reducedMotion ? 1 : defaultConfig.lerpFactor
     const dragZoom = reducedMotion ? 1 : zoomLevel
 
     const animate = () => {
       animFrameId = 0
       if (!activeRef.current) return
+      const lerpFactor = reducedMotion
+        ? 1
+        : state.pointerType === 'touch'
+          ? 0.18
+          : defaultConfig.lerpFactor
       state.offset.x += (state.targetOffset.x - state.offset.x) * lerpFactor
       state.offset.y += (state.targetOffset.y - state.offset.y) * lerpFactor
       state.zoom += (state.targetZoom - state.zoom) * lerpFactor
@@ -404,8 +410,9 @@ function ArtGalleryScene({
       selectAt(state.mousePosition.x, state.mousePosition.y)
     }
 
-    const startDrag = (x, y) => {
+    const startDrag = (x, y, pointerType) => {
       state.isDragging = true
+      state.pointerType = pointerType
       state.previousPointer.x = x
       state.previousPointer.y = y
     }
@@ -417,8 +424,10 @@ function ArtGalleryScene({
       if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
         if (state.targetZoom === 1) state.targetZoom = dragZoom
       }
-      state.targetOffset.x -= deltaX * 0.003
-      state.targetOffset.y += deltaY * 0.003
+      const sensitivity = state.pointerType === 'touch' ? 0.0075 : 0.003
+      state.targetOffset.x -= deltaX * sensitivity
+      state.targetOffset.y += deltaY * sensitivity
+      if (state.pointerType === 'touch') state.wheelNavigating = true
       state.previousPointer.x = x
       state.previousPointer.y = y
     }
@@ -438,6 +447,7 @@ function ArtGalleryScene({
           : event.deltaMode === 2
             ? container.clientHeight
             : 1
+      state.pointerType = 'mouse'
       state.targetOffset.x += event.deltaX * unit * 0.003
       state.targetOffset.y -= event.deltaY * unit * 0.003
       state.wheelNavigating = true
@@ -446,10 +456,10 @@ function ArtGalleryScene({
     const onPointerDown = (event) => {
       event.preventDefault()
       container.setPointerCapture?.(event.pointerId)
-      startDrag(event.clientX, event.clientY)
+      startDrag(event.clientX, event.clientY, event.pointerType)
     }
     const onPointerMove = (event) => {
-      updateMousePosition(event)
+      if (event.pointerType !== 'touch') updateMousePosition(event)
       handleMove(event.clientX, event.clientY)
     }
     const onPointerUp = (event) => {
@@ -621,7 +631,7 @@ export function ArtGallery({
   onActiveChange,
   navigateRef,
 }) {
-  const reducedMotion = useEffectReducedMotion()
+  const reducedMotion = usePrefersReducedMotion()
   const { resolvedTheme } = useTheme()
 
   return (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import dynamic from 'next/dynamic'
 import type { FunctionReturnType } from 'convex/server'
 import type { ReviewCollection } from '@/components/review-collection-provider'
@@ -14,6 +14,10 @@ import {
   ProximitySidebar,
   type ProximitySection,
 } from '@/components/ui/proximity-sidebar'
+
+const subscribeToHydration = () => () => {}
+const getClientSnapshot = () => true
+const getServerSnapshot = () => false
 
 const AlbumGallery = dynamic(() =>
   import('@/components/album-gallery').then((module) => module.AlbumGallery),
@@ -232,12 +236,12 @@ export function ReviewsCatalog({
 }) {
   const { collection } = useReviewCollection()
   const prefersReducedMotion = usePrefersReducedMotion()
-  const [hasHydrated, setHasHydrated] = useState(false)
+  const hasHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getClientSnapshot,
+    getServerSnapshot,
+  )
   const selectedCollection = hasHydrated ? collection : initialCollection
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setHasHydrated(true))
-    return () => cancelAnimationFrame(frame)
-  }, [])
   const [hasVisitedAlbums, setHasVisitedAlbums] = useState(false)
   useEffect(() => {
     if (selectedCollection !== 'albums' || hasVisitedAlbums) return

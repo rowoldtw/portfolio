@@ -38,7 +38,7 @@ The frontmatter records the light palette. Apply the corresponding dark values t
 | border             | `oklch(1 0 0 / 10%)` |
 | ring               | `oklch(0.556 0 0)`   |
 
-Theme changes must take effect on button press. Run any transition alongside the state change, with a direct reduced-motion fallback. Preserve the saved theme choice and system preference behavior without an initial theme flash.
+Theme changes must take effect on button press. Run any transition alongside the state change, with a direct reduced-motion fallback. Preserve the saved theme choice without an initial theme flash. When the browser changes its color scheme, return to system mode and apply the new theme immediately.
 
 ## Typography
 

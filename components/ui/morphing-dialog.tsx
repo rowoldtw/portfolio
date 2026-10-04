@@ -24,7 +24,7 @@ import useClickOutside from '@/hooks/useClickOutside'
 
 const MotionImage = motion.create(Image)
 
-export type MorphingDialogContextType = {
+type MorphingDialogContextType = {
   isOpen: boolean
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
   uniqueId: string
@@ -44,7 +44,7 @@ function useMorphingDialog() {
   return context
 }
 
-export type MorphingDialogProviderProps = {
+type MorphingDialogProviderProps = {
   children: React.ReactNode
   transition?: Transition
 }
@@ -76,7 +76,7 @@ function MorphingDialogProvider({
   )
 }
 
-export type MorphingDialogProps = {
+type MorphingDialogProps = {
   children: React.ReactNode
   transition?: Transition
 }
@@ -91,7 +91,7 @@ function MorphingDialog({ children, transition }: MorphingDialogProps) {
   )
 }
 
-export type MorphingDialogTriggerProps = {
+type MorphingDialogTriggerProps = {
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
@@ -147,7 +147,7 @@ function MorphingDialogTrigger({
   )
 }
 
-export type MorphingDialogContentProps = {
+type MorphingDialogContentProps = {
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
@@ -237,7 +237,7 @@ function MorphingDialogContent({
   )
 }
 
-export type MorphingDialogContainerProps = {
+type MorphingDialogContainerProps = {
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
@@ -275,7 +275,7 @@ function MorphingDialogContainer({ children }: MorphingDialogContainerProps) {
   )
 }
 
-export type MorphingDialogTitleProps = {
+type MorphingDialogTitleProps = {
   dialogTitle?: boolean
   children: React.ReactNode
   className?: string
@@ -303,7 +303,7 @@ function MorphingDialogTitle({
   )
 }
 
-export type MorphingDialogSubtitleProps = {
+type MorphingDialogSubtitleProps = {
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
@@ -327,7 +327,7 @@ function MorphingDialogSubtitle({
   )
 }
 
-export type MorphingDialogDescriptionProps = {
+type MorphingDialogDescriptionProps = {
   children: React.ReactNode
   className?: string
   disableLayoutAnimation?: boolean
@@ -366,7 +366,7 @@ function MorphingDialogDescription({
   )
 }
 
-export type MorphingDialogImageProps = {
+type MorphingDialogImageProps = {
   src: string
   darkSrc?: string
   alt: string
@@ -437,7 +437,7 @@ function MorphingDialogImage({
   )
 }
 
-export type MorphingDialogCloseProps = {
+type MorphingDialogCloseProps = {
   children?: React.ReactNode
   className?: string
   variants?: {
