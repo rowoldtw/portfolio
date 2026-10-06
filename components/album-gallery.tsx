@@ -18,17 +18,12 @@ export function AlbumGallery({
 }) {
   const fadeId = useId()
   // Keep the atlas inputs stable when Convex replaces initial data with identical live data.
-  const assetKey = JSON.stringify(
-    albums.map((album) => [album.image, album.name, album.brand]),
-  )
-  const { images, items } = useMemo(() => {
-    const assets = JSON.parse(assetKey) as [string, string, string][]
-    return {
-      images: assets.map(([image]) =>
-        image.replace('/1200x1200bb.jpg', '/600x600bb.jpg'),
-      ),
-      items: assets.map(([, title, year]) => ({ title, year })),
-    }
+  const assetKey = JSON.stringify(albums.map((album) => album.image))
+  const images = useMemo(() => {
+    const assets = JSON.parse(assetKey) as string[]
+    return assets.map((image) =>
+      image.replace('/1200x1200bb.jpg', '/600x600bb.jpg'),
+    )
   }, [assetKey])
   const navigateRef = useRef<((delta: number) => void) | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -43,7 +38,7 @@ export function AlbumGallery({
         return (
           <div
             key={offset}
-            className="relative aspect-square h-1/2 shrink-0 overflow-hidden rounded-sm"
+            className="relative aspect-square h-1/2 shrink-0 overflow-hidden rounded-sm shadow-[0_3px_12px_rgb(0_0_0/0.18)]"
           >
             <Image
               src={images[index]}
@@ -82,7 +77,6 @@ export function AlbumGallery({
         <ArtGallery
           active={active}
           images={images}
-          items={items}
           onActiveChange={setActiveIndex}
           navigateRef={navigateRef}
           fallback={fallback}
@@ -129,7 +123,7 @@ export function AlbumGallery({
         />
       </svg>
       <p
-        className="pointer-events-none absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-[2rem] bg-[#f4f4f4]/50 px-4 py-2 text-center text-xs font-medium text-zinc-950 backdrop-blur-xl dark:bg-[#181818]/75 dark:text-zinc-50"
+        className="pointer-events-none absolute bottom-[calc(5rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-[2rem] bg-[#f4f4f4]/50 px-4 py-2 text-center text-xs font-medium text-zinc-950 backdrop-blur-xl dark:bg-[#181818]/75 dark:text-zinc-50"
         aria-live="polite"
       >
         {activeAlbum.name}{' '}

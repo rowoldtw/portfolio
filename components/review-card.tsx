@@ -17,9 +17,16 @@ import {
 export type ReviewProduct =
   import('@/convex/_generated/dataModel').Doc<'reviews'>
 
-function CurrentUseBadge() {
+function CurrentUseBadge({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="pointer-events-none absolute top-3 left-3 z-10 inline-flex items-center rounded-lg bg-[#F5F4F3] px-2.5 py-1 text-[10px] font-medium tracking-wide text-zinc-900 dark:bg-[#121212] dark:text-zinc-100">
+    <span
+      className={cn(
+        'pointer-events-none absolute z-10 inline-flex items-center rounded-lg bg-[#F5F4F3] py-1 font-medium tracking-wide text-zinc-900 dark:bg-[#121212] dark:text-zinc-100',
+        compact
+          ? 'top-2 left-2 px-1.5 text-[8px] sm:top-3 sm:left-3 sm:px-2.5 sm:text-[10px]'
+          : 'top-3 left-3 px-2.5 text-[10px]',
+      )}
+    >
       Currently using
     </span>
   )
@@ -39,7 +46,7 @@ export function ReviewCard({
     isAlbum ? 'aspect-square object-cover' : 'aspect-[16/9] object-contain',
     !isAlbum && 'p-5',
   )
-  const renderImage = () => (
+  const renderImage = (compact = false) => (
     <div className="relative">
       {product.collection === 'software' ? (
         <div className="flex aspect-[16/9] w-full items-center justify-center rounded-lg bg-white dark:bg-[#202020]">
@@ -50,7 +57,10 @@ export function ReviewCard({
             height={96}
             sizes="96px"
             priority={priority}
-            className="size-24 shrink-0 rounded-[22%] object-contain"
+            className={cn(
+              'shrink-0 rounded-[22%] object-contain',
+              compact ? 'size-14 sm:size-24' : 'size-24',
+            )}
           />
         </div>
       ) : (
@@ -60,10 +70,10 @@ export function ReviewCard({
           width={800}
           height={isAlbum ? 800 : 450}
           priority={priority}
-          className={imageClass}
+          className={cn(imageClass, compact && !isAlbum && 'p-3 sm:p-5')}
         />
       )}
-      {product.currentlyUsing && <CurrentUseBadge />}
+      {product.currentlyUsing && <CurrentUseBadge compact={compact} />}
     </div>
   )
 
@@ -73,19 +83,22 @@ export function ReviewCard({
     >
       <MorphingDialogTrigger
         style={{ borderRadius: 16 }}
-        className="bg-[#F5F4F3] p-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-4 dark:bg-[#121212]"
+        className="bg-[#F5F4F3] p-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-4 sm:p-2 dark:bg-[#121212]"
       >
-        {renderImage()}
-        <div className="flex items-center justify-between gap-3 px-3 py-3">
+        {renderImage(true)}
+        <div className="flex items-center justify-between gap-2 px-1 py-2 sm:gap-3 sm:px-3 sm:py-3">
           <div className="min-w-0">
-            <MorphingDialogTitle className="text-sm font-medium tracking-tight">
+            <MorphingDialogTitle className="text-xs font-medium tracking-tight break-words sm:text-sm">
               {product.name}
             </MorphingDialogTitle>
             <MorphingDialogSubtitle className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
               {subtitle}
             </MorphingDialogSubtitle>
           </div>
-          <Plus aria-hidden="true" className="size-4 shrink-0 text-zinc-500" />
+          <Plus
+            aria-hidden="true"
+            className="size-3 shrink-0 text-zinc-500 sm:size-4"
+          />
         </div>
         <span className="sr-only">Read review</span>
       </MorphingDialogTrigger>

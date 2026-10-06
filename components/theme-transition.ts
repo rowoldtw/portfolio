@@ -3,7 +3,7 @@
 const TRANSITION_STYLE_ID = 'theme-transition-styles'
 const TRANSITION_CSS = `
   ::view-transition-group(root) {
-    animation-duration: 0.7s;
+    animation-duration: 0.55s;
     animation-timing-function: var(--expo-out);
   }
 
@@ -33,6 +33,8 @@ const TRANSITION_CSS = `
 `
 
 export function animateThemeChange(changeTheme: () => void) {
+  const root = document.documentElement
+  if (root.dataset.themeTransitioning === 'true') return null
   if (
     window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
     !document.startViewTransition
@@ -52,14 +54,49 @@ export function animateThemeChange(changeTheme: () => void) {
   }
 
   styleElement.textContent = TRANSITION_CSS
-  const root = document.documentElement
   root.dataset.themeTransitioning = 'true'
 
-  const transition = document.startViewTransition(changeTheme)
-  const restoreCursor = () => {
-    delete root.dataset.themeTransitioning
+  const body = document.body
+  const wasInert = body.inert
+  const focusedElement = document.activeElement
+  const previousOverflow = root.style.overflow
+  const controller = new AbortController()
+  const blockInteraction = (event: Event) => {
+    event.preventDefault()
+    event.stopImmediatePropagation()
   }
-  void transition.finished.then(restoreCursor, restoreCursor)
+  for (const event of [
+    'click',
+    'pointerdown',
+    'keydown',
+    'wheel',
+    'touchmove',
+  ]) {
+    window.addEventListener(event, blockInteraction, {
+      capture: true,
+      passive: false,
+      signal: controller.signal,
+    })
+  }
+  body.inert = true
+  root.style.overflow = 'hidden'
 
-  return transition
+  const restoreInteraction = () => {
+    delete root.dataset.themeTransitioning
+    body.inert = wasInert
+    root.style.overflow = previousOverflow
+    controller.abort()
+    if (focusedElement instanceof HTMLElement && focusedElement.isConnected) {
+      focusedElement.focus({ preventScroll: true })
+    }
+  }
+
+  try {
+    const transition = document.startViewTransition(changeTheme)
+    void transition.finished.then(restoreInteraction, restoreInteraction)
+    return transition
+  } catch (error) {
+    restoreInteraction()
+    throw error
+  }
 }

@@ -130,7 +130,7 @@ export function SkiperCommandMenu({
                   className="h-full min-w-0 flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                 />
               </div>
-              <Command.List className="scrollbar-hidden h-[min(22rem,60dvh)] overflow-y-auto overscroll-none px-2 py-1">
+              <CommandOptionsList>
                 <Command.Empty className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-500">
                   No matching commands.
                 </Command.Empty>
@@ -188,7 +188,7 @@ export function SkiperCommandMenu({
                     </Command.Group>
                   ))}
                 </LayoutGroup>
-              </Command.List>
+              </CommandOptionsList>
               <div className="flex h-11 items-center justify-between gap-3 border-t border-black/10 bg-[#F9F8F7] px-3 text-[11px] text-zinc-500 dark:border-[#1F1F1F] dark:bg-[#141414]">
                 <span className="flex items-center gap-2">
                   <span className="flex size-5 items-center justify-center rounded border border-black/10 dark:border-[#1F1F1F]">
@@ -205,5 +205,41 @@ export function SkiperCommandMenu({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  )
+}
+
+function CommandOptionsList({ children }: { children: ReactNode }) {
+  const listRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const list = listRef.current
+    if (!list) return
+    const updateFades = () => {
+      const remaining = list.scrollHeight - list.clientHeight - list.scrollTop
+      list.style.setProperty(
+        '--menu-fade-top',
+        list.scrollTop > 1 ? '20px' : '0px',
+      )
+      list.style.setProperty(
+        '--menu-fade-bottom',
+        remaining > 1 ? '20px' : '0px',
+      )
+    }
+    const observer = new ResizeObserver(updateFades)
+    observer.observe(list)
+    if (list.firstElementChild) observer.observe(list.firstElementChild)
+    list.addEventListener('scroll', updateFades, { passive: true })
+    updateFades()
+    return () => {
+      observer.disconnect()
+      list.removeEventListener('scroll', updateFades)
+    }
+  }, [])
+  return (
+    <Command.List
+      ref={listRef}
+      className="command-options-scroll scrollbar-hidden h-[min(22rem,60dvh)] overflow-y-auto overscroll-none px-2 py-1"
+    >
+      {children}
+    </Command.List>
   )
 }

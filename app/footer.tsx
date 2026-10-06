@@ -216,6 +216,23 @@ function NavbarActions({
 }
 
 export function Footer({ className }: { className?: string }) {
+  const navbarRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const navbar = navbarRef.current
+    if (!navbar) return
+    const updateHeight = () =>
+      document.documentElement.style.setProperty(
+        '--site-navbar-height',
+        `${navbar.offsetHeight}px`,
+      )
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(navbar)
+    updateHeight()
+    return () => {
+      observer.disconnect()
+      document.documentElement.style.removeProperty('--site-navbar-height')
+    }
+  }, [])
   const pathname = usePathname()
   const router = useRouter()
   const activePageId = getActivePageId(pathname)
@@ -379,6 +396,7 @@ export function Footer({ className }: { className?: string }) {
               />
             )}
             <motion.footer
+              ref={navbarRef}
               layout={animateLayout}
               data-site-navbar=""
               style={{ borderRadius: 32 }}

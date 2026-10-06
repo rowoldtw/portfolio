@@ -19,16 +19,14 @@ export function AnimatedThemeToggler({ className }: AnimatedThemeTogglerProps) {
 
   const toggleTheme = React.useCallback(() => {
     const switchTheme = () => setTheme(isDark ? 'light' : 'dark')
-    if (isTransitioning) {
-      switchTheme()
-      return
-    }
+    if (isTransitioning) return
 
     const transition = animateThemeChange(switchTheme)
     if (!transition) return
 
     setIsTransitioning(true)
-    void transition.finished.finally(() => setIsTransitioning(false))
+    const finish = () => setIsTransitioning(false)
+    void transition.finished.then(finish, finish)
   }, [isDark, isTransitioning, setTheme])
 
   return (
