@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { motion } from 'motion/react'
 import {
-  BrainCircuit,
+  CodeXml,
   Bot,
   Brain,
   AudioLines,
@@ -19,7 +19,7 @@ const WORDS = [
   { text: 'hi!', icon: null },
   { text: "i'm woody :)", icon: null },
   { text: 'i like...', icon: null },
-  { text: 'machine learning', icon: BrainCircuit },
+  { text: 'machine learning', icon: CodeXml },
   { text: 'ai', icon: Bot },
   { text: 'brains', icon: Brain },
   { text: 'hyperpop', icon: AudioLines },

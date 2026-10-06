@@ -5,11 +5,11 @@ import { SOCIAL_LINKS } from './data'
 export default function HomePage() {
   return (
     <div data-landing-page="" className="bg-white dark:bg-[#080808]">
-      <main className="bg-background relative z-10 mx-2.5 min-h-dvh overflow-hidden rounded-b-[24px]">
+      <main className="bg-background relative z-10 mx-2.5 min-h-svh overflow-hidden rounded-b-[24px] md:min-h-dvh">
         <section
           id="home"
           data-section="home"
-          className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden px-4 py-20 text-left"
+          className="relative flex min-h-svh w-full items-center justify-center overflow-hidden px-4 py-20 text-left md:min-h-dvh"
         >
           <LandingHeader />
         </section>

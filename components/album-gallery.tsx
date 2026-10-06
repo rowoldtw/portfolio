@@ -122,6 +122,11 @@ export function AlbumGallery({
           mask={`url(#${fadeId}-mask)`}
         />
       </svg>
+      <span
+        data-album-selection-dot=""
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 left-1/2 z-10 size-[14px] -translate-x-1/2 -translate-y-1/2 rounded-full backdrop-invert md:hidden"
+      />
       <p
         className="pointer-events-none absolute bottom-[calc(5rem+env(safe-area-inset-bottom))] left-1/2 z-10 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-[2rem] bg-[#f4f4f4]/50 px-4 py-2 text-center text-xs font-medium text-zinc-950 backdrop-blur-xl dark:bg-[#181818]/75 dark:text-zinc-50"
         aria-live="polite"
