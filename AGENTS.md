@@ -2,11 +2,11 @@
 
 ## Commands
 
-- Install dependencies with `pnpm install`.
-- Run the site with `pnpm dev`.
-- Check formatting and code rules with `pnpm lint`.
-- Verify production output with `pnpm build` after changes to app code, configuration, or dependencies.
-- For local review data, run `pnpm exec convex dev` alongside the site. See `convex/README.md` for setup, seeding, and deployment.
+- Install dependencies with `bun install`.
+- Run the site with `bun run dev`.
+- Check formatting and code rules with `bun run lint`.
+- Verify production output with `bun run build` after changes to app code, configuration, or dependencies.
+- For local review data, run `bunx convex dev` alongside the site. See `convex/README.md` for setup, seeding, and deployment.
 
 ## Repository map
 

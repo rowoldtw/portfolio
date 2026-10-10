@@ -38,7 +38,7 @@ export function AlbumGallery({
         return (
           <div
             key={offset}
-            className="relative aspect-square h-1/2 shrink-0 overflow-hidden rounded-sm shadow-[0_3px_12px_rgb(0_0_0/0.18)]"
+            className="relative aspect-square h-1/2 shrink-0 overflow-hidden rounded-sm shadow-[0_3px_12px_rgb(0_0_0/0.18)] dark:shadow-[0_3px_12px_rgb(255_255_255/0.025)]"
           >
             <Image
               src={images[index]}

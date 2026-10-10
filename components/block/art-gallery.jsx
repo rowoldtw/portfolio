@@ -25,6 +25,7 @@ const fragmentShader = `
   uniform vec2 uOffset;
   uniform vec2 uResolution;
   uniform vec4 uBackgroundColor;
+  uniform vec3 uShadowColor;
   uniform float uZoom;
   uniform float uCellSize;
   uniform float uTextureCount;
@@ -55,7 +56,7 @@ const fragmentShader = `
     float shadowEdge = length(max(shadowDistance, 0.0)) + min(max(shadowDistance.x, shadowDistance.y), 0.0);
     float shadowAlpha = (1.0 - smoothstep(-0.02, 0.14, shadowEdge)) * 0.18;
     float texIndex = mod(cellId.x + cellId.y * 3.0, uTextureCount);
-    vec3 color = mix(backgroundColor, vec3(0.0), shadowAlpha);
+    vec3 color = mix(backgroundColor, uShadowColor, shadowAlpha);
     float atlasSize = ceil(sqrt(uTextureCount));
     vec2 atlasPos = vec2(mod(texIndex, atlasSize), floor(texIndex / atlasSize));
     // Flip within the tile; flipping the atlas would sample its unused rows.
@@ -73,6 +74,7 @@ function getPalette(isDark) {
   const dark = new THREE.Color('#080808')
   return {
     background: isDark ? [dark.r, dark.g, dark.b, 1] : [1, 1, 1, 1],
+    shadow: new THREE.Color(isDark ? '#242424' : '#000000'),
   }
 }
 
@@ -238,6 +240,7 @@ function ArtGalleryScene({
     materialRef.current?.uniforms.uBackgroundColor.value.set(
       ...palette.background,
     )
+    materialRef.current?.uniforms.uShadowColor.value.copy(palette.shadow)
     rendererRef.current?.setClearColor(
       new THREE.Color(...palette.background.slice(0, 3)),
       1,
@@ -479,6 +482,7 @@ function ArtGalleryScene({
         uBackgroundColor: {
           value: new THREE.Vector4(...getPalette(isDarkRef.current).background),
         },
+        uShadowColor: { value: getPalette(isDarkRef.current).shadow },
         uZoom: { value: 1 },
         uCellSize: { value: cellSize },
         uTextureCount: { value: images.length },

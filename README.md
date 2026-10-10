@@ -4,24 +4,26 @@ A personal portfolio built with Next.js App Router, React, Tailwind CSS, MDX, Mo
 
 ## Development
 
+Use Bun 1.4.3 (the version pinned in `package.json`). Commit `bun.lock` when dependencies change; use `bun install --frozen-lockfile` in CI.
+
 ```bash
-pnpm install
-pnpm dev
+bun install
+bun run dev
 ```
 
-The site can run without Convex, but `/reviews` displays an unavailable message until `NEXT_PUBLIC_CONVEX_URL` is configured. For the review catalog, run `pnpm exec convex dev` in another terminal and follow [the Convex setup guide](convex/README.md) to seed data. Convex writes local settings to the ignored `.env.local` file.
+The site can run without Convex, but `/reviews` displays an unavailable message until `NEXT_PUBLIC_CONVEX_URL` is configured. For the review catalog, run `bunx convex dev` in another terminal and follow [the Convex setup guide](convex/README.md) to seed data. Convex writes local settings to the ignored `.env.local` file.
 
 ## Checks
 
 ```bash
-pnpm lint
-pnpm build
+bun run lint
+bun run build
 ```
 
 ## Site structure
 
 - `/` is a single landing section with a footer revealed by scrolling.
-- `/projects` currently shows placeholder previews for Amarula, Rooibos, and Muta.
+- `/projects` shows text-only entries for Amarula, Rooibos, and Muta.
 - `/reviews` displays Convex-backed hardware and software cards plus a full-screen album art gallery with drag, trackpad, and keyboard navigation and album and artist captions. Software cards show their category without a platform badge. Album artwork fades in when ready and softly fades into the page background at all four edges, without a separate preloader.
 - `/blog/01-01-26`, `/blog/02-01-26`, and `/blog/03-01-26` are MDX posts.
 - `/personal` redirects to `/reviews`; `/gallery` redirects to `/projects`.

@@ -217,6 +217,12 @@ html[data-landing-mask-expanded='true'] [data-landing-page] {
     animation-delay: 80ms;
   }
 
+  html[data-show-intro-preloader='false']
+    [data-landing-heading][data-landing-entrance='complete']
+    > span {
+    animation: none;
+  }
+
   @keyframes landing-heading-enter {
     from {
       opacity: 0;
@@ -532,6 +538,15 @@ body:has([data-landing-page]) {
 }
 
 .page-enter:has([data-reviews-ready]) {
+  animation: none;
+}
+
+[data-review-page-fade] {
+  animation-fill-mode: backwards;
+}
+
+[data-review-entrance='complete'] .review-section-enter,
+[data-review-entrance='complete'] .review-item-enter {
   animation: none;
 }
 

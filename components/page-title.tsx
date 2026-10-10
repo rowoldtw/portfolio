@@ -8,10 +8,12 @@ export function PageTitle({
   children,
   id,
   className,
+  entranceKey,
 }: {
   children: string
   id?: string
   className?: string
+  entranceKey?: string
 }) {
   const ready = useReviewsReady()
   const reducedMotion = usePrefersReducedMotion()
@@ -25,6 +27,7 @@ export function PageTitle({
         </h1>
       ) : (
         <TextEffect
+          onceKey={entranceKey ?? `review-title-${children}`}
           as="h1"
           per="char"
           preset="fade"
