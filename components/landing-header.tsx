@@ -1,6 +1,6 @@
 'use client'
 
-import { useSyncExternalStore } from 'react'
+import { useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { TextEffect } from '@/components/ui/text-effect'
 import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 
@@ -9,6 +9,8 @@ const DETAILS = [
   'Last update: Q3 2026',
   'Three.js refresh: Q4 2026',
 ] as const
+
+let headingEntrancePlayed = false
 
 function subscribeToPreloader(callback: () => void) {
   const observer = new MutationObserver(callback)
@@ -24,6 +26,16 @@ function getPreloaderComplete() {
 }
 
 export function LandingHeader() {
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  useLayoutEffect(() => {
+    const heading = headingRef.current
+    if (heading && headingEntrancePlayed)
+      heading.dataset.landingEntrance = 'complete'
+    return () => {
+      if (heading && headingEntrancePlayed)
+        heading.dataset.landingEntrance = 'complete'
+    }
+  }, [])
   const preloaderComplete = useSyncExternalStore(
     subscribeToPreloader,
     getPreloaderComplete,
@@ -34,7 +46,12 @@ export function LandingHeader() {
   return (
     <header className="text-foreground relative z-10 flex w-[min(92vw,64rem)] flex-col items-start px-5 py-7 sm:px-10 sm:py-10">
       <h1
+        ref={headingRef}
         data-landing-heading=""
+        onAnimationStart={(event) => {
+          if (event.animationName === 'landing-heading-enter')
+            headingEntrancePlayed = true
+        }}
         className="w-full text-[clamp(4rem,10vw,8.5rem)] leading-[0.82] font-semibold tracking-[-0.075em]"
       >
         <span className="block">Woodrow</span>
@@ -46,6 +63,7 @@ export function LandingHeader() {
             <p key={detail}>{detail}</p>
           ) : (
             <TextEffect
+              onceKey={`home-detail-${detail}`}
               key={detail}
               as="p"
               per="char"

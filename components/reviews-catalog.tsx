@@ -1,6 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import {
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import dynamic from 'next/dynamic'
 import type { FunctionReturnType } from 'convex/server'
 import type { ReviewCollection } from '@/components/review-collection-provider'
@@ -8,12 +16,18 @@ import { usePaginatedQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { ReviewCard } from '@/components/review-card'
 import { useReviewCollection } from '@/components/review-collection-provider'
-import { TextEffect } from '@/components/ui/text-effect'
-import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
+import { useReviewsReady } from '@/components/reviews-readiness'
+import { PageTitle } from '@/components/page-title'
 import {
   ProximitySidebar,
   type ProximitySection,
 } from '@/components/ui/proximity-sidebar'
+
+const subscribeToHydration = () => () => {}
+const getClientSnapshot = () => true
+const getServerSnapshot = () => false
+
+const playedReviewEntrances = new Set<ReviewCollection>()
 
 const AlbumGallery = dynamic(() =>
   import('@/components/album-gallery').then((module) => module.AlbumGallery),
@@ -34,8 +48,10 @@ function AlbumsCatalog({
   disableLoadMore: boolean
   onLoadMore: () => void
 }) {
+  const ready = useReviewsReady()
   return (
     <main
+      data-review-page-fade={active ? '' : undefined}
       data-reviews-page={active ? '' : undefined}
       data-album-page={active ? '' : undefined}
       aria-hidden={!active}
@@ -51,8 +67,10 @@ function AlbumsCatalog({
         aria-label="Albums"
         className="relative h-full"
       >
-        {albums.length > 0 ? (
-          <AlbumGallery albums={albums} active={active} />
+        {!ready ? null : albums.length > 0 ? (
+          <Suspense fallback={null}>
+            <AlbumGallery albums={albums} active={active} />
+          </Suspense>
         ) : (
           <p className="absolute inset-0 flex items-center justify-center text-sm text-zinc-500">
             No reviews here yet.
@@ -82,18 +100,40 @@ type ReviewSection = {
 }
 
 function ReviewSections({
+  collection,
   sections,
   total,
   moreAvailable,
   countLabel,
 }: {
+  collection: ReviewCollection
   sections: ReviewSection[]
   total: number
   moreAvailable: boolean
   countLabel: string
 }) {
+  const sectionsRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const sections = sectionsRef.current
+    if (sections && playedReviewEntrances.has(collection))
+      sections.dataset.reviewEntrance = 'complete'
+    return () => {
+      if (sections && playedReviewEntrances.has(collection))
+        sections.dataset.reviewEntrance = 'complete'
+    }
+  }, [collection])
   return (
-    <>
+    <div
+      ref={sectionsRef}
+      data-review-entrance=""
+      onAnimationStart={(event) => {
+        if (
+          event.animationName === 'review-content-enter' ||
+          event.animationName === 'page-enter'
+        )
+          playedReviewEntrances.add(collection)
+      }}
+    >
       {sections
         .filter((section) => section.items.length > 0)
         .map(({ title, items }, index) => (
@@ -116,7 +156,7 @@ function ReviewSections({
             </div>
             <div
               data-cursor-exclude=""
-              className="relative z-40 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              className="relative z-40 grid grid-cols-2 items-start gap-3 sm:gap-4 lg:grid-cols-3"
             >
               {items.map((product, itemIndex) => (
                 <div
@@ -136,13 +176,12 @@ function ReviewSections({
             </div>
           </section>
         ))}
-    </>
+    </div>
   )
 }
 
 function ReviewListCatalog({
   selectedCollection,
-  prefersReducedMotion,
   proximitySections,
   sections,
   total,
@@ -152,7 +191,6 @@ function ReviewListCatalog({
   onLoadMore,
 }: {
   selectedCollection: ReviewCollection
-  prefersReducedMotion: boolean
   proximitySections: ProximitySection[]
   sections: ReviewSection[]
   total: number
@@ -163,8 +201,10 @@ function ReviewListCatalog({
 }) {
   return (
     <main
+      key={selectedCollection}
+      data-review-page-fade=""
       data-reviews-page=""
-      className="bg-background min-h-dvh px-5 pt-20 pb-44 sm:px-10 sm:pt-28 dark:bg-[#080808]"
+      className="page-enter bg-background min-h-dvh px-5 pt-20 pb-44 sm:px-10 sm:pt-28 dark:bg-[#080808]"
     >
       <div aria-hidden="true" data-review-scroll-fade="" />
       <ProximitySidebar
@@ -175,23 +215,13 @@ function ReviewListCatalog({
       <div className="mx-auto w-full max-w-5xl">
         <header className="mb-10 flex flex-wrap items-end justify-between gap-5">
           <div id="reviews-top" className="scroll-mt-28">
-            {prefersReducedMotion ? (
-              <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
-                Reviews
-              </h1>
-            ) : (
-              <TextEffect
-                key={selectedCollection}
-                as="h1"
-                per="line"
-                preset="fade-in-blur"
-                speedReveal={1.25}
-                speedSegment={0.8}
-                className="text-3xl font-medium tracking-tight sm:text-4xl"
-              >
-                Reviews
-              </TextEffect>
-            )}
+            <PageTitle
+              entranceKey={`review-title-${selectedCollection}`}
+              key={selectedCollection}
+              className="text-3xl font-medium tracking-tight sm:text-4xl"
+            >
+              Reviews
+            </PageTitle>
           </div>
         </header>
         <div key={selectedCollection}>
@@ -199,6 +229,7 @@ function ReviewListCatalog({
             <p className="text-sm text-zinc-500">No reviews here yet.</p>
           )}
           <ReviewSections
+            collection={selectedCollection}
             sections={sections}
             total={total}
             moreAvailable={status !== 'Exhausted'}
@@ -231,13 +262,12 @@ export function ReviewsCatalog({
   initialCollection: ReviewCollection
 }) {
   const { collection } = useReviewCollection()
-  const prefersReducedMotion = usePrefersReducedMotion()
-  const [hasHydrated, setHasHydrated] = useState(false)
+  const hasHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getClientSnapshot,
+    getServerSnapshot,
+  )
   const selectedCollection = hasHydrated ? collection : initialCollection
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setHasHydrated(true))
-    return () => cancelAnimationFrame(frame)
-  }, [])
   const [hasVisitedAlbums, setHasVisitedAlbums] = useState(false)
   useEffect(() => {
     if (selectedCollection !== 'albums' || hasVisitedAlbums) return
@@ -326,7 +356,6 @@ export function ReviewsCatalog({
       {selectedCollection !== 'albums' && (
         <ReviewListCatalog
           selectedCollection={selectedCollection}
-          prefersReducedMotion={prefersReducedMotion}
           proximitySections={proximitySections}
           sections={sections}
           total={results.length}

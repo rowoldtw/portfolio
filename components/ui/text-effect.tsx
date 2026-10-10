@@ -10,11 +10,12 @@ import {
 } from 'motion/react'
 import React from 'react'
 
-export type PresetType = 'blur' | 'fade-in-blur' | 'scale' | 'fade' | 'slide'
+type PresetType = 'blur' | 'fade-in-blur' | 'scale' | 'fade' | 'slide'
 
-export type PerType = 'word' | 'char' | 'line'
+type PerType = 'word' | 'char' | 'line'
 
-export type TextEffectProps = {
+type TextEffectProps = {
+  onceKey?: string
   children: string
   per?: PerType
   as?: keyof React.JSX.IntrinsicElements
@@ -34,6 +35,14 @@ export type TextEffectProps = {
   containerTransition?: Transition
   segmentTransition?: Transition
   style?: React.CSSProperties
+}
+
+const playedEntrances = new Set<string>()
+const entranceListeners = new Set<() => void>()
+
+function subscribeToEntrances(listener: () => void) {
+  entranceListeners.add(listener)
+  return () => entranceListeners.delete(listener)
 }
 
 const defaultStaggerTimes: Record<PerType, number> = {
@@ -205,6 +214,7 @@ const createVariantsWithTransition = (
 }
 
 export function TextEffect({
+  onceKey,
   children,
   per = 'word',
   as = 'p',
@@ -222,6 +232,11 @@ export function TextEffect({
   segmentTransition,
   style,
 }: TextEffectProps) {
+  const entrancePlayed = React.useSyncExternalStore(
+    subscribeToEntrances,
+    () => !!onceKey && playedEntrances.has(onceKey),
+    () => false,
+  )
   const segments = splitText(children, per)
   const MotionTag = motion[as as keyof typeof motion] as typeof motion.div
 
@@ -266,13 +281,23 @@ export function TextEffect({
     <AnimatePresence mode="popLayout">
       {trigger && (
         <MotionTag
-          initial="hidden"
+          initial={entrancePlayed ? false : 'hidden'}
           animate="visible"
           exit="exit"
           variants={computedVariants.container}
           className={className}
           onAnimationComplete={onAnimationComplete}
-          onAnimationStart={onAnimationStart}
+          onAnimationStart={(definition) => {
+            if (
+              definition === 'visible' &&
+              onceKey &&
+              !playedEntrances.has(onceKey)
+            ) {
+              playedEntrances.add(onceKey)
+              entranceListeners.forEach((listener) => listener())
+            }
+            onAnimationStart?.()
+          }}
           style={style}
         >
           {per !== 'line' ? <span className="sr-only">{children}</span> : null}

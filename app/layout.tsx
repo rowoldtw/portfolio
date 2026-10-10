@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -29,18 +28,6 @@ export function generateMetadata(): Metadata {
     description: 'Portfolio website for Woodrow Rowoldt.',
   }
 }
-
-const geist = Geist({
-  variable: '--font-geist',
-  subsets: ['latin'],
-  preload: false,
-})
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-  preload: false,
-})
 
 const themeInitScript = `
   (() => {
@@ -91,9 +78,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
       </head>
-      <body
-        className={`${geist.variable} ${geistMono.variable} bg-background tracking-tight antialiased`}
-      >
+      <body className="bg-background tracking-tight antialiased">
         <ThemeProvider>
           <div
             aria-hidden="true"
@@ -107,7 +92,7 @@ export default function RootLayout({
               <SitePreloader />
               <div
                 data-site-content=""
-                className="bg-background min-h-screen w-full font-(family-name:--font-inter-tight)"
+                className="bg-background min-h-screen w-full"
               >
                 {children}
               </div>

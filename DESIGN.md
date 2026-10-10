@@ -38,7 +38,7 @@ The frontmatter records the light palette. Apply the corresponding dark values t
 | border             | `oklch(1 0 0 / 10%)` |
 | ring               | `oklch(0.556 0 0)`   |
 
-Theme changes must take effect on button press. Run any transition alongside the state change, with a direct reduced-motion fallback. Preserve the saved theme choice and system preference behavior without an initial theme flash.
+Theme changes must take effect on button press. Run any transition alongside the state change, with a direct reduced-motion fallback. Preserve the saved theme choice without an initial theme flash. When the browser changes its color scheme, return to system mode and apply the new theme immediately.
 
 ## Typography
 
@@ -50,7 +50,7 @@ Use concise, concrete visitor-facing copy. Keep implementation explanations out 
 
 Use centered, bounded content with responsive side padding. Choose width for the content: text-led pages can remain narrow, while project previews can use more room. Preserve space around the main content and fixed navigation without forcing every route into the same composition.
 
-Keep the homepage focused on its landing content and reveal the separate footer through normal scrolling. The projects page gives image previews more room. Hardware and software reviews use a denser catalog; software cards show their category without a platform badge. Albums fill the viewport with a theme-matched, lensed art gallery that supports drag, trackpad, and keyboard navigation, shows album and artist captions in a navbar-matched pill above the navbar, fades artwork in when ready, and softly fades it into the page background at all four edges.
+Keep the homepage focused on its landing content and reveal the separate footer through normal scrolling. The projects page keeps all three text-only sections visible in one viewport, arranged side by side on desktop and stacked on mobile. Each project has its own title font and entrance effect, with background colors following the entrance sequence and hover selection. Hardware and software reviews use a denser catalog; software cards show their category without a platform badge. Albums fill the viewport with a theme-matched, lensed art gallery that supports drag, trackpad, and keyboard navigation, shows album and artist captions in a navbar-matched pill above the navbar, fades artwork in when ready, and softly fades it into the page background at all four edges.
 
 Keep layouts usable on narrow screens and with longer content. Resolve overflow at its source rather than hiding it at the page boundary.
 

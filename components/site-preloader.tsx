@@ -2,19 +2,31 @@
 
 import * as React from 'react'
 import { motion } from 'motion/react'
+import {
+  CodeXml,
+  Bot,
+  Brain,
+  AudioLines,
+  Swords,
+  Clapperboard,
+  Mountain,
+} from 'lucide-react'
 import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 
 const PRELOADER_STORAGE_KEY = 'portfolio:intro-preloader-seen'
 export const PRELOADER_REPLAY_EVENT = 'portfolio:replay-intro-preloader'
 const WORDS = [
-  'Hello',
-  'Bonjour',
-  'Ciao',
-  'Olá',
-  'やあ',
-  'Hallå',
-  'Hallo',
-  'Hello',
+  { text: 'hi!', icon: null },
+  { text: "i'm woody :)", icon: null },
+  { text: 'i like...', icon: null },
+  { text: 'machine learning', icon: CodeXml },
+  { text: 'ai', icon: Bot },
+  { text: 'brains', icon: Brain },
+  { text: 'hyperpop', icon: AudioLines },
+  { text: 'swords', icon: Swords },
+  { text: 'scary movies', icon: Clapperboard },
+  { text: 'and climbing', icon: Mountain },
+  { text: 'i hope u enjoy my site!', icon: null },
 ]
 
 export function SitePreloader() {
@@ -80,7 +92,13 @@ function WordsPreloader({ onComplete }: { onComplete: () => void }) {
 
   React.useEffect(() => {
     if (document.documentElement.dataset.showIntroPreloader !== 'true') return
-    const duration = reducedMotion ? 180 : word === 0 ? 650 : 160
+    const duration = reducedMotion
+      ? 180
+      : word === 0
+        ? 500
+        : word === WORDS.length - 1
+          ? 350
+          : Math.max(220, WORDS[word].text.length * 30)
     const timer = window.setTimeout(() => {
       if (reducedMotion || word === WORDS.length - 1) setLeaving(true)
       else setWord((current) => current + 1)
@@ -109,13 +127,15 @@ function PreloaderCurtain({
   reducedMotion: boolean
   onComplete: () => void
 }) {
+  const Icon = WORDS[word].icon
+
   return (
     <motion.div
       role="main"
       aria-label="Portfolio introduction"
       data-site-preloader=""
       data-cursor-exclude=""
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-white text-zinc-950 dark:bg-[#080808] dark:text-zinc-100"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-white text-zinc-950 dark:bg-[#080808] dark:text-zinc-100"
       initial={false}
       variants={{
         enter: { opacity: 1, y: 0 },
@@ -133,13 +153,21 @@ function PreloaderCurtain({
       <div role="status" aria-label="Loading portfolio">
         <motion.p
           aria-hidden="true"
-          className="flex items-center gap-4 text-3xl font-normal tracking-tight sm:text-[42px]"
+          className="flex max-w-[calc(100vw-3rem)] items-center justify-center gap-3 text-center text-[clamp(1.25rem,5.5vw,2.625rem)] font-normal tracking-tight"
           initial={{ opacity: 0 }}
           animate={{ opacity: leaving ? 0 : 1 }}
           transition={{ duration: 0.2 }}
         >
-          <span className="size-2 rounded-full bg-current" />
-          {WORDS[word]}
+          {Icon && (
+            <Icon
+              key={WORDS[word].text}
+              aria-hidden="true"
+              data-preloader-icon=""
+              strokeWidth={1.5}
+              className="size-[1em] shrink-0"
+            />
+          )}
+          <span>{WORDS[word].text}</span>
         </motion.p>
       </div>
       {!reducedMotion && (

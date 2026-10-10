@@ -3,7 +3,7 @@
 // Adapted from ObsidianUI Art Gallery for the portfolio's album catalog.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useEffectReducedMotion } from '@/lib/effects/shared/webgl-surface'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/components/theme-provider'
 
@@ -11,8 +11,6 @@ const defaultConfig = {
   cellSize: 0.75,
   zoomLevel: 1.25,
   lerpFactor: 0.075,
-  textColor: 'rgba(128, 128, 128, 1)',
-  hoverColor: 'rgba(255, 255, 255, 0)',
 }
 
 const vertexShader = `
@@ -26,15 +24,12 @@ const vertexShader = `
 const fragmentShader = `
   uniform vec2 uOffset;
   uniform vec2 uResolution;
-  uniform vec4 uBorderColor;
-  uniform vec4 uHoverColor;
   uniform vec4 uBackgroundColor;
-  uniform vec2 uMousePos;
+  uniform vec3 uShadowColor;
   uniform float uZoom;
   uniform float uCellSize;
   uniform float uTextureCount;
   uniform sampler2D uImageAtlas;
-  uniform sampler2D uTextAtlas;
   varying vec2 vUv;
 
   void main() {
@@ -49,108 +44,38 @@ const fragmentShader = `
     vec2 cellPos = worldCoord / uCellSize;
     vec2 cellId = floor(cellPos);
     vec2 cellUV = fract(cellPos);
-    vec2 mouseScreenUV = (uMousePos / uResolution) * 2.0 - 1.0;
-    mouseScreenUV.y = -mouseScreenUV.y;
-    float mouseRadius = length(mouseScreenUV);
-    float mouseDistortion = 1.0 - 0.08 * mouseRadius * mouseRadius;
-    vec2 mouseDistortedUV = mouseScreenUV * mouseDistortion;
-    vec2 mouseWorldCoord = mouseDistortedUV * aspectRatio;
-    mouseWorldCoord *= uZoom;
-    mouseWorldCoord += uOffset;
-    vec2 mouseCellPos = mouseWorldCoord / uCellSize;
-    vec2 mouseCellId = floor(mouseCellPos);
-    vec2 cellCenter = cellId + 0.5;
-    vec2 mouseCellCenter = mouseCellId + 0.5;
-    float cellDistance = length(cellCenter - mouseCellCenter);
-    float hoverIntensity = 1.0 - smoothstep(0.4, 0.7, cellDistance);
-    bool isHovered = hoverIntensity > 0.0 && uMousePos.x >= 0.0;
     vec3 backgroundColor = uBackgroundColor.rgb;
-    if (isHovered) {
-      backgroundColor = mix(uBackgroundColor.rgb, uHoverColor.rgb, hoverIntensity * uHoverColor.a);
-    }
-    float lineWidth = 0.005;
-    float gridX = smoothstep(0.0, lineWidth, cellUV.x) * smoothstep(0.0, lineWidth, 1.0 - cellUV.x);
-    float gridY = smoothstep(0.0, lineWidth, cellUV.y) * smoothstep(0.0, lineWidth, 1.0 - cellUV.y);
-    float gridMask = gridX * gridY;
     float imageSize = 0.6;
     float imageBorder = (1.0 - imageSize) * 0.5;
     vec2 imageUV = (cellUV - imageBorder) / imageSize;
-    float edgeSmooth = 0.01;
+    vec2 edgeSmooth = max(fwidth(cellPos) / imageSize, vec2(0.001));
     vec2 imageMask = smoothstep(-edgeSmooth, edgeSmooth, imageUV) *
                     smoothstep(-edgeSmooth, edgeSmooth, 1.0 - imageUV);
     float imageAlpha = imageMask.x * imageMask.y;
-    bool inImageArea = imageUV.x >= 0.0 && imageUV.x <= 1.0 && imageUV.y >= 0.0 && imageUV.y <= 1.0;
-    float textHeight = 0.08;
-    float textY = 0.88;
-    bool inTextArea = cellUV.x >= 0.05 && cellUV.x <= 0.95 && cellUV.y >= textY && cellUV.y <= (textY + textHeight);
+    vec2 shadowDistance = abs(imageUV + vec2(0.0, 0.025) - 0.5) - 0.5;
+    float shadowEdge = length(max(shadowDistance, 0.0)) + min(max(shadowDistance.x, shadowDistance.y), 0.0);
+    float shadowAlpha = (1.0 - smoothstep(-0.02, 0.14, shadowEdge)) * 0.18;
     float texIndex = mod(cellId.x + cellId.y * 3.0, uTextureCount);
-    vec3 color = backgroundColor;
-    if (inImageArea && imageAlpha > 0.0) {
-      float atlasSize = ceil(sqrt(uTextureCount));
-      vec2 atlasPos = vec2(mod(texIndex, atlasSize), floor(texIndex / atlasSize));
-      // Flip within the tile; flipping the atlas would sample its unused rows.
-      vec2 atlasUV = (atlasPos + vec2(imageUV.x, 1.0 - imageUV.y)) / atlasSize;
-      vec3 imageColor = texture2D(uImageAtlas, atlasUV).rgb;
-      color = mix(color, imageColor, imageAlpha);
-    }
-    if (inTextArea) {
-      vec2 textCoord = vec2((cellUV.x - 0.05) / 0.9, (cellUV.y - textY) / textHeight);
-      textCoord.y = 1.0 - textCoord.y;
-      float atlasSize = ceil(sqrt(uTextureCount));
-      vec2 atlasPos = vec2(mod(texIndex, atlasSize), floor(texIndex / atlasSize));
-      vec2 atlasUV = (atlasPos + textCoord) / atlasSize;
-      vec4 textColor = texture2D(uTextAtlas, atlasUV);
-      color = mix(backgroundColor, textColor.rgb, textColor.a);
-    }
-    vec3 borderRGB = uBorderColor.rgb;
-    float borderAlpha = uBorderColor.a;
-    color = mix(color, borderRGB, (1.0 - gridMask) * borderAlpha);
+    vec3 color = mix(backgroundColor, uShadowColor, shadowAlpha);
+    float atlasSize = ceil(sqrt(uTextureCount));
+    vec2 atlasPos = vec2(mod(texIndex, atlasSize), floor(texIndex / atlasSize));
+    // Flip within the tile; flipping the atlas would sample its unused rows.
+    vec2 tileUV = clamp(vec2(imageUV.x, 1.0 - imageUV.y), 0.0, 1.0);
+    vec2 atlasUV = (atlasPos * 264.0 + 4.5 + tileUV * 255.0) / (atlasSize * 264.0);
+    vec3 imageColor = texture2D(uImageAtlas, atlasUV).rgb;
+    color = mix(color, imageColor, imageAlpha);
     float fade = 1.0 - smoothstep(1.2, 1.8, radius);
     gl_FragColor = vec4(mix(uBackgroundColor.rgb, color, fade), 1.0);
     #include <colorspace_fragment>
   }
 `
 
-function rgbaToArray(rgba) {
-  const match = rgba.match(/rgba?\(([^)]+)\)/)
-  if (!match) return [1, 1, 1, 1]
-  const parts = match[1].split(',')
-  return [
-    parseFloat(parts[0]) / 255,
-    parseFloat(parts[1]) / 255,
-    parseFloat(parts[2]) / 255,
-    parseFloat(parts[3] ?? '1'),
-  ]
-}
-
 function getPalette(isDark) {
   const dark = new THREE.Color('#080808')
-  const darkBorder = new THREE.Color('#292929')
   return {
     background: isDark ? [dark.r, dark.g, dark.b, 1] : [1, 1, 1, 1],
-    border: isDark
-      ? [darkBorder.r, darkBorder.g, darkBorder.b, 1]
-      : [0, 0, 0, 0.15],
+    shadow: new THREE.Color(isDark ? '#242424' : '#000000'),
   }
-}
-
-function createTextCanvas(title, year, textColor) {
-  const canvas = document.createElement('canvas')
-  canvas.width = 1024
-  canvas.height = 128
-  const ctx = canvas.getContext('2d')
-  if (ctx) {
-    ctx.clearRect(0, 0, 1024, 128)
-    ctx.font = '40px monospace'
-    ctx.fillStyle = textColor
-    ctx.textBaseline = 'middle'
-    ctx.imageSmoothingEnabled = false
-    ctx.textAlign = 'left'
-    ctx.fillText(String(title).toUpperCase(), 15, 64)
-    ctx.textAlign = 'right'
-    ctx.fillText(String(year), 1024 - 15, 64)
-  }
-  return canvas
 }
 
 function blankImage() {
@@ -204,22 +129,21 @@ function closeBitmaps(images) {
   images.forEach((image) => image?.close?.())
 }
 
-function createTextureAtlas(sources, isText = false) {
+function createTextureAtlas(sources) {
   const atlasSize = Math.ceil(Math.sqrt(sources.length))
-  const textureSize = isText ? 384 : 256
+  const textureSize = 256
+  const padding = 4
+  const tileSize = textureSize + padding * 2
   const canvas = document.createElement('canvas')
-  canvas.width = canvas.height = atlasSize * textureSize
+  canvas.width = canvas.height = atlasSize * tileSize
   const ctx = canvas.getContext('2d')
   if (ctx) {
-    if (isText) ctx.clearRect(0, 0, canvas.width, canvas.height)
-    else {
-      ctx.fillStyle = 'black'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-    }
+    ctx.fillStyle = 'black'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
     const fallbackSource = sources.find(Boolean)
     sources.forEach((source, index) => {
-      const x = (index % atlasSize) * textureSize
-      const y = Math.floor(index / atlasSize) * textureSize
+      const x = (index % atlasSize) * tileSize + padding
+      const y = Math.floor(index / atlasSize) * tileSize + padding
       if (!source) return
       try {
         ctx.drawImage(source, x, y, textureSize, textureSize)
@@ -227,15 +151,59 @@ function createTextureAtlas(sources, isText = false) {
         if (fallbackSource)
           ctx.drawImage(fallbackSource, x, y, textureSize, textureSize)
       }
+      ctx.drawImage(
+        canvas,
+        x,
+        y,
+        1,
+        textureSize,
+        x - padding,
+        y,
+        padding,
+        textureSize,
+      )
+      ctx.drawImage(
+        canvas,
+        x + textureSize - 1,
+        y,
+        1,
+        textureSize,
+        x + textureSize,
+        y,
+        padding,
+        textureSize,
+      )
+      ctx.drawImage(
+        canvas,
+        x - padding,
+        y,
+        tileSize,
+        1,
+        x - padding,
+        y - padding,
+        tileSize,
+        padding,
+      )
+      ctx.drawImage(
+        canvas,
+        x - padding,
+        y + textureSize - 1,
+        tileSize,
+        1,
+        x - padding,
+        y + textureSize,
+        tileSize,
+        padding,
+      )
     })
   }
   const atlasTexture = new THREE.CanvasTexture(canvas)
   atlasTexture.wrapS = THREE.ClampToEdgeWrapping
   atlasTexture.wrapT = THREE.ClampToEdgeWrapping
-  atlasTexture.minFilter = THREE.LinearFilter
+  atlasTexture.minFilter = THREE.LinearMipmapLinearFilter
   atlasTexture.magFilter = THREE.LinearFilter
   atlasTexture.flipY = false
-  atlasTexture.generateMipmaps = false
+  atlasTexture.generateMipmaps = true
   atlasTexture.colorSpace = THREE.SRGBColorSpace
   return atlasTexture
 }
@@ -243,7 +211,6 @@ function createTextureAtlas(sources, isText = false) {
 function ArtGalleryScene({
   active,
   images,
-  items,
   cellSize,
   zoomLevel,
   reducedMotion,
@@ -273,7 +240,7 @@ function ArtGalleryScene({
     materialRef.current?.uniforms.uBackgroundColor.value.set(
       ...palette.background,
     )
-    materialRef.current?.uniforms.uBorderColor.value.set(...palette.border)
+    materialRef.current?.uniforms.uShadowColor.value.copy(palette.shadow)
     rendererRef.current?.setClearColor(
       new THREE.Color(...palette.background.slice(0, 3)),
       1,
@@ -292,14 +259,13 @@ function ArtGalleryScene({
     let geometry
     let material
     let imageAtlas
-    let textAtlas
 
     const state = {
       isDragging: false,
+      pointerType: 'mouse',
       previousPointer: { x: 0, y: 0 },
       offset: { x: 0, y: 0 },
       targetOffset: { x: 0, y: 0 },
-      mousePosition: { x: -1, y: -1 },
       zoom: 1,
       targetZoom: 1,
       selectedIndex: 0,
@@ -328,6 +294,7 @@ function ArtGalleryScene({
     }
 
     navigateRef.current = (delta) => {
+      state.pointerType = 'mouse'
       state.targetOffset.x += delta * cellSize
       selectIndex(mod(state.selectedIndex + delta, images.length))
     }
@@ -356,12 +323,16 @@ function ArtGalleryScene({
     container.appendChild(renderer.domElement)
     rendererRef.current = renderer
 
-    const lerpFactor = reducedMotion ? 1 : defaultConfig.lerpFactor
     const dragZoom = reducedMotion ? 1 : zoomLevel
 
     const animate = () => {
       animFrameId = 0
       if (!activeRef.current) return
+      const lerpFactor = reducedMotion
+        ? 1
+        : state.pointerType === 'touch'
+          ? 0.18
+          : defaultConfig.lerpFactor
       state.offset.x += (state.targetOffset.x - state.offset.x) * lerpFactor
       state.offset.y += (state.targetOffset.y - state.offset.y) * lerpFactor
       state.zoom += (state.targetZoom - state.zoom) * lerpFactor
@@ -395,17 +366,12 @@ function ArtGalleryScene({
 
     const updateMousePosition = (event) => {
       const rect = renderer.domElement.getBoundingClientRect()
-      state.mousePosition.x = event.clientX - rect.left
-      state.mousePosition.y = event.clientY - rect.top
-      plane?.material.uniforms.uMousePos.value.set(
-        state.mousePosition.x,
-        state.mousePosition.y,
-      )
-      selectAt(state.mousePosition.x, state.mousePosition.y)
+      selectAt(event.clientX - rect.left, event.clientY - rect.top)
     }
 
-    const startDrag = (x, y) => {
+    const startDrag = (x, y, pointerType) => {
       state.isDragging = true
+      state.pointerType = pointerType
       state.previousPointer.x = x
       state.previousPointer.y = y
     }
@@ -417,8 +383,10 @@ function ArtGalleryScene({
       if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
         if (state.targetZoom === 1) state.targetZoom = dragZoom
       }
-      state.targetOffset.x -= deltaX * 0.003
-      state.targetOffset.y += deltaY * 0.003
+      const sensitivity = state.pointerType === 'touch' ? 0.0075 : 0.003
+      state.targetOffset.x -= deltaX * sensitivity
+      state.targetOffset.y += deltaY * sensitivity
+      if (state.pointerType === 'touch') state.wheelNavigating = true
       state.previousPointer.x = x
       state.previousPointer.y = y
     }
@@ -438,6 +406,7 @@ function ArtGalleryScene({
           : event.deltaMode === 2
             ? container.clientHeight
             : 1
+      state.pointerType = 'mouse'
       state.targetOffset.x += event.deltaX * unit * 0.003
       state.targetOffset.y -= event.deltaY * unit * 0.003
       state.wheelNavigating = true
@@ -446,10 +415,10 @@ function ArtGalleryScene({
     const onPointerDown = (event) => {
       event.preventDefault()
       container.setPointerCapture?.(event.pointerId)
-      startDrag(event.clientX, event.clientY)
+      startDrag(event.clientX, event.clientY, event.pointerType)
     }
     const onPointerMove = (event) => {
-      updateMousePosition(event)
+      if (event.pointerType !== 'touch') updateMousePosition(event)
       handleMove(event.clientX, event.clientY)
     }
     const onPointerUp = (event) => {
@@ -458,8 +427,6 @@ function ArtGalleryScene({
       endDrag()
     }
     const onPointerLeave = () => {
-      state.mousePosition.x = state.mousePosition.y = -1
-      plane?.material.uniforms.uMousePos.value.set(-1, -1)
       endDrag()
     }
     const onResize = () => {
@@ -497,15 +464,11 @@ function ArtGalleryScene({
       }
       const replacement = preparedImages.find(Boolean) ?? blankImage()
       const imageTiles = preparedImages.map((image) => image ?? replacement)
-      const textCanvases = items.map((item) =>
-        createTextCanvas(item.title, item.year, defaultConfig.textColor),
-      )
       try {
-        imageAtlas = createTextureAtlas(imageTiles, false)
+        imageAtlas = createTextureAtlas(imageTiles)
       } finally {
         closeBitmaps(preparedImages)
       }
-      textAtlas = createTextureAtlas(textCanvases, true)
       if (cancelled) return
 
       const uniforms = {
@@ -516,21 +479,14 @@ function ArtGalleryScene({
             container.clientHeight,
           ),
         },
-        uBorderColor: {
-          value: new THREE.Vector4(...getPalette(isDarkRef.current).border),
-        },
-        uHoverColor: {
-          value: new THREE.Vector4(...rgbaToArray(defaultConfig.hoverColor)),
-        },
         uBackgroundColor: {
           value: new THREE.Vector4(...getPalette(isDarkRef.current).background),
         },
-        uMousePos: { value: new THREE.Vector2(-1, -1) },
+        uShadowColor: { value: getPalette(isDarkRef.current).shadow },
         uZoom: { value: 1 },
         uCellSize: { value: cellSize },
         uTextureCount: { value: images.length },
         uImageAtlas: { value: imageAtlas },
-        uTextAtlas: { value: textAtlas },
       }
 
       geometry = new THREE.PlaneGeometry(2, 2)
@@ -571,7 +527,6 @@ function ArtGalleryScene({
       container.removeEventListener('wheel', onWheel)
       window.removeEventListener('resize', onResize)
       imageAtlas?.dispose()
-      textAtlas?.dispose()
       geometry?.dispose()
       material?.dispose()
       renderer?.dispose()
@@ -582,15 +537,7 @@ function ArtGalleryScene({
         container.removeChild(renderer.domElement)
       navigateRef.current = null
     }
-  }, [
-    images,
-    items,
-    cellSize,
-    zoomLevel,
-    reducedMotion,
-    onActiveChange,
-    navigateRef,
-  ])
+  }, [images, cellSize, zoomLevel, reducedMotion, onActiveChange, navigateRef])
 
   if (failed) return fallback
 
@@ -608,11 +555,10 @@ function ArtGalleryScene({
   )
 }
 
-/** @param {{ active?: boolean, images: string[], items: { title: string, year: string | number }[], cellSize?: number, zoomLevel?: number, className?: string, style?: import("react").CSSProperties, fallback?: import("react").ReactNode, onActiveChange?: (index: number) => void, navigateRef: import("react").RefObject<((delta: number) => void) | null> }} props */
+/** @param {{ active?: boolean, images: string[], cellSize?: number, zoomLevel?: number, className?: string, style?: import("react").CSSProperties, fallback?: import("react").ReactNode, onActiveChange?: (index: number) => void, navigateRef: import("react").RefObject<((delta: number) => void) | null> }} props */
 export function ArtGallery({
   active = true,
   images,
-  items,
   cellSize = defaultConfig.cellSize,
   zoomLevel = defaultConfig.zoomLevel,
   className,
@@ -621,7 +567,7 @@ export function ArtGallery({
   onActiveChange,
   navigateRef,
 }) {
-  const reducedMotion = useEffectReducedMotion()
+  const reducedMotion = usePrefersReducedMotion()
   const { resolvedTheme } = useTheme()
 
   return (
@@ -635,7 +581,6 @@ export function ArtGallery({
       <ArtGalleryScene
         active={active}
         images={images}
-        items={items}
         cellSize={cellSize}
         zoomLevel={zoomLevel}
         reducedMotion={reducedMotion}

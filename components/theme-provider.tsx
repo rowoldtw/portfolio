@@ -25,10 +25,14 @@ function getSystemTheme(): ResolvedTheme {
 function getStoredTheme(): Theme {
   if (typeof window === 'undefined') return 'system'
 
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
-  return stored === 'light' || stored === 'dark' || stored === 'system'
-    ? stored
-    : 'system'
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
+    return stored === 'light' || stored === 'dark' || stored === 'system'
+      ? stored
+      : 'system'
+  } catch {
+    return 'system'
+  }
 }
 
 function applyTheme(theme: Theme, resolvedTheme: ResolvedTheme) {
@@ -65,24 +69,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => window.cancelAnimationFrame(frame)
   }, [])
 
-  React.useLayoutEffect(() => {
-    applyTheme(theme, resolvedTheme)
-  }, [theme, resolvedTheme])
-
-  React.useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-
-    const handleChange = () => {
-      setSystemTheme(getSystemTheme())
-    }
-
-    mediaQuery.addEventListener('change', handleChange)
-
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [])
-
   const setTheme = React.useCallback((nextTheme: Theme) => {
-    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme)
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme)
+    } catch {}
     setThemeState(nextTheme)
     const nextSystemTheme = getSystemTheme()
     const nextResolvedTheme =
@@ -91,6 +81,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setSystemTheme(nextSystemTheme)
     applyTheme(nextTheme, nextResolvedTheme)
   }, [])
+
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => setTheme('system')
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [setTheme])
 
   const value = React.useMemo(
     () => ({ theme, resolvedTheme, setTheme }),

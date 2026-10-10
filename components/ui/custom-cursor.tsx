@@ -1,9 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import {
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type Dispatch,
@@ -11,10 +9,7 @@ import {
   type RefObject,
 } from 'react'
 import { usePathname } from 'next/navigation'
-import gsap from 'gsap'
 import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
-
-type Preview = { images: string[]; index: number; active: boolean }
 
 export function CustomCursor() {
   const pathname = usePathname()
@@ -24,12 +19,8 @@ export function CustomCursor() {
 function createCursorSelection(
   position: HTMLDivElement,
   setLinkWidth: Dispatch<SetStateAction<number | null>>,
-  setPreview: Dispatch<SetStateAction<Preview | null>>,
 ) {
   let currentLink: HTMLAnchorElement | null = null
-  let currentRow: Element | null = null
-  let currentGroup: Element | null = null
-  let images: string[] = []
   const select = (
     target: Element | null,
     maskActive: boolean,
@@ -37,13 +28,12 @@ function createCursorSelection(
     y: number,
   ) => {
     const disabled = target?.closest(':disabled, [aria-disabled="true"]')
-    const row = target?.closest('[data-project-cursor]') ?? null
     const control = target?.closest(
       'a[href], button, summary, input, textarea, select, label, [role="button"], [role="link"], [role="option"], [contenteditable="true"]',
     )
     const selectable = !disabled && Boolean(control)
     position.dataset.cursorSelectable =
-      selectable && !maskActive && !row ? 'true' : 'false'
+      selectable && !maskActive ? 'true' : 'false'
 
     const underlineScope = maskActive
       ? null
@@ -74,23 +64,6 @@ function createCursorSelection(
       position.style.transform = `translate3d(${x}px, ${y}px, 0)`
       setLinkWidth(null)
     }
-
-    if (row === currentRow) return
-    currentRow = row
-    const group = row?.closest('[data-project-images]')
-    if (!row || !group) {
-      setPreview((current) => (current ? { ...current, active: false } : null))
-      return
-    }
-    if (group !== currentGroup) {
-      images = JSON.parse(group.getAttribute('data-project-images') ?? '[]')
-      currentGroup = group
-    }
-    setPreview({
-      active: true,
-      images,
-      index: Number(row.getAttribute('data-project-cursor')),
-    })
   }
 
   return {
@@ -100,7 +73,6 @@ function createCursorSelection(
     },
     reset: () => {
       currentLink = null
-      currentRow = null
     },
   }
 }
@@ -110,18 +82,16 @@ function subscribeToCursorInteractions({
   refreshRef,
   reducedMotion,
   setLinkWidth,
-  setPreview,
   setMaskExpanded,
 }: {
   position: HTMLDivElement
   refreshRef: RefObject<(() => void) | null>
   reducedMotion: boolean
   setLinkWidth: Dispatch<SetStateAction<number | null>>
-  setPreview: Dispatch<SetStateAction<Preview | null>>
   setMaskExpanded: Dispatch<SetStateAction<boolean>>
 }) {
   const pointer = window.matchMedia('(hover: hover) and (pointer: fine)')
-  const selection = createCursorSelection(position, setLinkWidth, setPreview)
+  const selection = createCursorSelection(position, setLinkWidth)
   let maskTimer: number | null = null
   let maskActive = false
   let maskStartedAt = 0
@@ -164,10 +134,7 @@ function subscribeToCursorInteractions({
         position.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`
         setLinkWidth(null)
         setMaskExpanded(true)
-      } else if (
-        !(event.target instanceof Element) ||
-        !event.target.closest('[data-project-cursor]')
-      ) {
+      } else {
         position.dataset.cursorPressed = 'true'
       }
     }
@@ -180,7 +147,6 @@ function subscribeToCursorInteractions({
     delete position.dataset.cursorLink
     selection.reset()
     setLinkWidth(null)
-    setPreview((current) => (current ? { ...current, active: false } : null))
   }
   const move = (event: PointerEvent) => {
     if (!pointer.matches || event.pointerType !== 'mouse') {
@@ -240,7 +206,6 @@ function subscribeToCursorInteractions({
 }
 
 function getCursorAppearance(
-  active: boolean,
   maskExpanded: boolean,
   linkWidth: number | null,
   reducedMotion: boolean,
@@ -248,34 +213,26 @@ function getCursorAppearance(
 ) {
   const style = {
     scale: maskExpanded ? 1 : undefined,
-    width: active ? 400 : maskExpanded ? 350 : (linkWidth ?? 14),
-    height: active ? 250 : maskExpanded ? 350 : linkWidth ? 2 : 14,
-    borderRadius: active ? 12 : maskExpanded ? 175 : linkWidth ? 1 : 7,
+    width: maskExpanded ? 350 : (linkWidth ?? 14),
+    height: maskExpanded ? 350 : linkWidth ? 2 : 14,
+    borderRadius: maskExpanded ? 175 : linkWidth ? 1 : 7,
     transition: reducedMotion
       ? 'none'
       : pathname === '/projects'
         ? 'width 240ms ease, height 240ms ease, border-radius 240ms ease, scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)'
         : 'width 180ms cubic-bezier(0.23, 1, 0.32, 1), height 180ms cubic-bezier(0.23, 1, 0.32, 1), border-radius 180ms cubic-bezier(0.23, 1, 0.32, 1), scale var(--cursor-scale-duration, 350ms) cubic-bezier(0.34, 1.9, 0.64, 1)',
   }
-  const shape = active
-    ? 'preview'
-    : !maskExpanded && linkWidth
-      ? 'underline'
-      : 'circle'
+  const shape = !maskExpanded && linkWidth ? 'underline' : 'circle'
   return { style, shape }
 }
 
 function Cursor({ pathname }: { pathname: string }) {
   const refreshRef = useRef<(() => void) | null>(null)
   const positionRef = useRef<HTMLDivElement>(null)
-  const stackRef = useRef<HTMLDivElement>(null)
-  const [preview, setPreview] = useState<Preview | null>(null)
   const [linkWidth, setLinkWidth] = useState<number | null>(null)
   const [maskExpanded, setMaskExpanded] = useState(false)
   const reducedMotion = usePrefersReducedMotion()
-  const active = preview?.active ?? false
   const appearance = getCursorAppearance(
-    active,
     maskExpanded,
     linkWidth,
     reducedMotion,
@@ -290,7 +247,6 @@ function Cursor({ pathname }: { pathname: string }) {
       refreshRef,
       reducedMotion,
       setLinkWidth,
-      setPreview,
       setMaskExpanded,
     })
   }, [reducedMotion])
@@ -298,20 +254,6 @@ function Cursor({ pathname }: { pathname: string }) {
   useEffect(() => {
     refreshRef.current?.()
   }, [pathname])
-
-  useLayoutEffect(() => {
-    const stack = stackRef.current
-    if (!stack || !preview) return
-    const tween = gsap.to(stack.children, {
-      yPercent: -100 * preview.index,
-      duration: reducedMotion ? 0 : 0.4,
-      ease: 'power2.out',
-      overwrite: 'auto',
-    })
-    return () => {
-      tween.kill()
-    }
-  }, [preview, reducedMotion])
 
   return (
     <div
@@ -321,40 +263,11 @@ function Cursor({ pathname }: { pathname: string }) {
       className="pointer-events-none invisible fixed top-0 left-0 z-[100] data-[cursor-link=true]:transition-transform data-[cursor-link=true]:duration-200 data-[cursor-link=true]:[transition-timing-function:cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
     >
       <div
-        data-project-preview={active ? '' : undefined}
         data-cursor-shape={appearance.shape}
         className="relative -translate-x-1/2 -translate-y-1/2 overflow-hidden [[data-cursor-pressed=true]_&]:scale-[0.88] [[data-cursor-pressed=true]_&]:[--cursor-scale-duration:100ms] [[data-cursor-selectable=true]:not([data-cursor-pressed=true])_&[data-cursor-shape=circle]]:scale-[1.45] [[data-cursor-selectable=true][data-cursor-pressed=true]_&[data-cursor-shape=circle]]:scale-[1.15]"
         style={appearance.style}
       >
-        <span
-          className="absolute inset-0 rounded-full backdrop-invert"
-          style={{
-            opacity: active ? 0 : 1,
-            transition: reducedMotion ? 'none' : 'opacity 120ms ease',
-          }}
-        />
-        {preview && (
-          <div
-            ref={stackRef}
-            style={{
-              opacity: active ? 1 : 0,
-              transition: reducedMotion ? 'none' : 'opacity 180ms ease',
-            }}
-            className="absolute top-1/2 left-1/2 flex h-[250px] w-[400px] -translate-x-1/2 -translate-y-1/2 flex-col"
-          >
-            {preview.images.map((src) => (
-              <div key={src} className="relative h-full w-full shrink-0">
-                <Image
-                  src={src}
-                  alt=""
-                  fill
-                  sizes="400px"
-                  className="object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        <span className="absolute inset-0 rounded-full backdrop-invert" />
       </div>
     </div>
   )
